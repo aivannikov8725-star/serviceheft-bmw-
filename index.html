@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Serviceheft">
+<meta name="theme-color" content="#14161a">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>Serviceheft – Auto &amp; Motorrad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14161a; --panel:#1d2026; --panel2:#262a32; --line:#323741;
+  --text:#eef0f3; --muted:#9aa1ad; --accent:#ff8a1f; --accent2:#ffb15c;
+  --ok:#3ccf7a; --warn:#f2c94c; --bad:#ff5a5a; --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,.cond{font-family:"Barlow Condensed",Inter,sans-serif;letter-spacing:.02em;margin:0}
+.app{max-width:760px;margin:0 auto;min-height:100vh;padding-bottom:84px}
+header{position:sticky;top:0;padding-top:calc(10px + env(safe-area-inset-top)) !important;padding-left:calc(14px + env(safe-area-inset-left)) !important;padding-right:calc(14px + env(safe-area-inset-right)) !important;z-index:5;background:rgba(20,22,26,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center}
+.logo{display:flex;align-items:center;gap:8px;font-family:"Barlow Condensed";font-weight:700;font-size:21px;text-transform:uppercase}
+.logo .lt>span{color:var(--accent)}
+.vsel{margin-left:auto;display:flex;gap:6px;align-items:center;min-width:0;flex:1;justify-content:flex-end}
+@media(max-width:430px){.logo .lt{display:none}}
+.vsel select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 8px;max-width:100%;min-width:0;flex:0 1 auto}
+main{padding:14px calc(14px + env(safe-area-inset-right)) 14px calc(14px + env(safe-area-inset-left))}
+.backup{background:rgba(255,138,31,.1);border:1px solid rgba(255,138,31,.4);border-radius:var(--radius);padding:12px;margin-bottom:12px;display:flex;gap:10px;align-items:center}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.card h2{font-size:20px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h2 .r{margin-left:auto}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.row{display:flex;gap:8px;align-items:center}
+.wrap{flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.grid2>*{min-width:0}
+@media(max-width:380px){form .grid2{grid-template-columns:minmax(0,1fr)}}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--text)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1205}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad);border-color:#5a2a2a}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+.btn.block{width:100%}
+.hero{background:linear-gradient(135deg,#262a32,#1b1d22);position:relative;overflow:hidden}
+.hero .plate{display:inline-block;background:#f4f4f4;color:#111;border-radius:6px;padding:2px 10px 2px 22px;font-family:"Barlow Condensed";font-weight:700;font-size:20px;position:relative;border:2px solid #111}
+.hero .plate:before{content:"D";position:absolute;left:0;top:0;bottom:0;width:16px;background:#0b3d91;color:#fff;font-size:11px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px}
+.hero .big{font-family:"Barlow Condensed";font-size:30px;font-weight:700;line-height:1.05}
+.km{font-family:"Barlow Condensed";font-size:34px;font-weight:700;color:var(--accent2)}
+.stat{background:var(--panel2);border-radius:11px;padding:10px}
+.stat b{display:block;font-family:"Barlow Condensed";font-size:22px}
+.stat span{font-size:12px;color:var(--muted)}
+.list>.item{display:flex;gap:10px;align-items:center;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.list>.item:first-child{border-top:0}
+.ico{width:38px;height:38px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;flex:0 0 38px;font-size:18px}
+.grow{flex:1;min-width:0}
+.ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-weight:600;white-space:nowrap}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;background:var(--panel2)}
+.pill.ok{background:rgba(60,207,122,.15);color:var(--ok)}
+.pill.warn{background:rgba(242,201,76,.15);color:var(--warn)}
+.pill.bad{background:rgba(255,90,90,.15);color:var(--bad)}
+.bar{height:7px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:9px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}
+.chip{flex:0 0 auto;padding:6px 11px;border-radius:99px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:13px}
+.chip.on{background:var(--accent);color:#1a1205;border-color:var(--accent);font-weight:600}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:6;background:rgba(24,26,31,.97);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .in{display:flex;max-width:760px;width:100%}
+nav.tabs button{flex:1;background:none;border:0;padding:9px 0 10px;color:var(--muted);cursor:pointer;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--accent)}
+.ad{border:1px dashed #4a4f5a;border-radius:var(--radius);padding:12px;margin-bottom:12px;display:flex;gap:12px;align-items:center;background:#191b20}
+.ad .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input.i,select.i,textarea.i{display:block;width:100%;max-width:100%;min-width:0;min-height:44px;-webkit-appearance:none;appearance:none;font-size:16px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;outline:none}
+input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--accent)}
+textarea.i{min-height:70px;resize:vertical}
+input.i[type=date],input.i[type=month]{text-align:left}
+input.i::-webkit-date-and-time-value{text-align:left}
+select.i{background-image:linear-gradient(45deg,transparent 50%,#9aa1ad 50%),linear-gradient(135deg,#9aa1ad 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+label.f>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+fieldset{min-width:0}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:10px 12px 2px;margin:0 0 12px}
+legend{font-family:"Barlow Condensed";font-weight:600;text-transform:uppercase;padding:0 6px;color:var(--accent2)}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);width:100%;max-width:760px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+.sheet h3{font-size:22px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center}
+.sheet h3 .x{margin-left:auto;background:none;border:0;font-size:26px;cursor:pointer;color:var(--muted)}
+.toggle{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+.seg{display:flex;background:var(--panel2);border-radius:11px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;padding:9px;border-radius:9px;cursor:pointer;font-weight:600}
+.seg button.on{background:var(--accent);color:#1a1205}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#000;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px}
+.empty{text-align:center;padding:30px 10px}
+.empty .e{font-size:46px}
+.legal{font-size:13px;line-height:1.55;color:#cfd3da}
+.legal h4{margin:14px 0 4px;font-size:14px}
+.cat-bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.cat-bar .n{width:110px;flex:0 0 110px}
+.cat-bar .b{flex:1;height:10px;background:var(--panel2);border-radius:9px;overflow:hidden}
+.cat-bar .b i{display:block;height:100%;background:var(--accent)}
+.cat-bar .v{width:80px;text-align:right}
+.badge-pro{font-size:11px;background:linear-gradient(90deg,#ff8a1f,#ffcf5c);color:#1a1205;border-radius:6px;padding:1px 6px;font-weight:700;margin-left:6px}
+.warnbox{background:rgba(242,201,76,.1);border:1px solid rgba(242,201,76,.35);border-radius:10px;padding:10px;font-size:13px;margin-bottom:10px}
+pre.code{white-space:pre-wrap;word-break:break-all;background:#0e0f12;border-radius:10px;padding:10px;font-size:11px;max-height:220px;overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff8a1f" stroke-width="2.2" stroke-linecap="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg><span class="lt">Service<span>heft</span></span></div>
+    <div class="vsel" id="vsel"></div>
+  </header>
+  <main id="main"></main>
+</div>
+<nav class="tabs"><div class="in" id="tabs"></div></nav>
+<div id="overlay"></div>
+
+<script>
+/* =========================================================
+   KONFIGURATION – hier später echte Partner-/Affiliate-Daten eintragen
+   ========================================================= */
+const CONFIG = {
+  freeVehicles: 1,
+  communityMin: 1, // Mindestanzahl Fahrer, ab der ein Community-Wert angezeigt wird (Live-Betrieb: 3+)
+  pricing: { monthly: "2,99 €", yearly: "19,99 €", extraVehicle: "0,99 €/Monat" },
+  partners: [
+    { id:"amazon",   name:"Amazon",     types:["auto","motorrad"], url:q=>`https://www.amazon.de/s?k=${q}&tag=DEIN-AFFILIATE-TAG-21` },
+    { id:"autodoc",  name:"Autodoc",    types:["auto"],            url:q=>`https://www.autodoc.de/search?keyword=${q}` },
+    { id:"kfzteile", name:"kfzteile24", types:["auto"],            url:q=>`https://www.kfzteile24.de/suche?search=${q}` },
+    { id:"louis",    name:"Louis",      types:["motorrad"],        url:q=>`https://www.louis.de/search?q=${q}` },
+    { id:"ebay",     name:"eBay",       types:["auto","motorrad"], url:q=>`https://www.ebay.de/sch/i.html?_nkw=${q}` }
+  ],
+  ads: [
+    { t:"Motoröl-Woche: bis zu 25 % Rabatt", s:"Partner-Anzeige · Platzhalter", e:"🛢️" },
+    { t:"Werkstattbedarf für Selbstschrauber", s:"Partner-Anzeige · Platzhalter", e:"🔧" },
+    { t:"Drehmomentschlüssel & Werkstattwagen", s:"Partner-Anzeige · Platzhalter", e:"🧰" }
+  ]
+};
+
+const CATS = {
+  service:{n:"Inspektion/Service",e:"🛠️"}, repair:{n:"Reparatur",e:"🔩"}, parts:{n:"Teile/Umbau",e:"⚙️"},
+  fuel:{n:"Tanken/Laden",e:"⛽"}, tires:{n:"Reifen",e:"🛞"}, hu:{n:"HU/AU (TÜV)",e:"📋"},
+  fees:{n:"Versicherung/Steuer",e:"💶"}, care:{n:"Pflege",e:"🧽"}, other:{n:"Sonstiges",e:"📎"}
+};
+const PRESETS = {
+  auto:[
+    {name:"Ölwechsel + Ölfilter",km:15000,mo:12},{name:"Luftfilter",km:30000,mo:24},{name:"Innenraumfilter",km:15000,mo:12},
+    {name:"Bremsflüssigkeit",km:0,mo:24},{name:"Zündkerzen",km:60000,mo:48},{name:"Zahnriemen",km:120000,mo:72},
+    {name:"Kühlmittel",km:0,mo:48},{name:"HU/AU (TÜV)",km:0,mo:24}
+  ],
+  motorrad:[
+    {name:"Ölwechsel + Ölfilter",km:6000,mo:12},{name:"Kette reinigen/schmieren",km:600,mo:0},{name:"Kettensatz prüfen",km:6000,mo:12},
+    {name:"Bremsflüssigkeit",km:0,mo:24},{name:"Ventilspiel prüfen",km:24000,mo:0},{name:"Luftfilter",km:12000,mo:24},
+    {name:"Zündkerzen",km:12000,mo:24},{name:"Kühlmittel",km:0,mo:36},{name:"HU (TÜV)",km:0,mo:24}
+  ]
+};
+const PART_SUGGEST = {
+  auto:["Ölfilter","Motoröl","Luftfilter","Innenraumfilter","Bremsbeläge vorne","Bremsscheiben","Zündkerzen","Wischerblätter","Batterie","Zahnriemensatz"],
+  motorrad:["Ölfilter","Motoröl","Kettensatz","Kettenspray","Bremsbeläge","Luftfilter","Zündkerzen","Batterie","Reifen","Bremsflüssigkeit DOT 4"]
+};
+
+/* ================= State & Speicherung ================= */
+const uid = () => Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const today = () => new Date().toISOString().slice(0,10);
+let S = { meta:{premium:false,consentShare:false,consentCommunity:false,consentDate:null,activeId:null,cart:[],adsSeen:0}, vehicles:{} };
+let UI = { tab:"home", filter:"all" };
+let store = { mode:"local", db:null, uid:null, dirty:new Set(), timer:null, busy:false };
+let downloads = null;
+let COMM = { loaded:false, groups:{} };
+const SRC={handbuch:"📕 Handbuch/Serviceplan",werkstatt:"🏭 Angabe Werkstatt",eigene:"🔧 Eigene Erfahrung",vorlage:"📄 Vorlage (Richtwert)",community:"👥 Community"};
+const SHARE_SRC=["handbuch","werkstatt","eigene"];
+
+function lsGet(){ try{ return JSON.parse(localStorage.getItem("serviceheft_v1")||"null"); }catch(e){ return null; } }
+function lsSet(){ try{ localStorage.setItem("serviceheft_v1", JSON.stringify(S)); }catch(e){} }
+
+function markDirty(key){ store.dirty.add(key); lsSet(); clearTimeout(store.timer); store.timer=setTimeout(flush,700); }
+async function flush(){
+  if(!store.db||!store.uid||store.busy) return;
+  store.busy=true;
+  try{
+    while(store.dirty.size){
+      const key=[...store.dirty][0]; store.dirty.delete(key);
+      const ref=store.db.collection("data/users/"+store.uid).doc(key);
+      try{
+        if(key==="community"){ const cref=store.db.doc("community/"+store.uid); const pl=communityPayload(); if(pl) await cref.set(pl); else await cref.delete(); continue; }
+        if(key==="meta") await ref.set(JSON.parse(JSON.stringify(S.meta)));
+        else if(S.vehicles[key.slice(2)]) await ref.set(JSON.parse(JSON.stringify(S.vehicles[key.slice(2)])));
+        else await ref.delete();
+      }catch(e){
+        if(e&&e.code==="quota_exceeded"){ toast("Speicher voll – bitte alte Einträge exportieren/löschen"); }
+        else if(e&&e.code==="unavailable"){ store.dirty.add(key); await new Promise(r=>setTimeout(r,1500+Math.random()*1000)); }
+        else { store.mode="local"; break; }
+      }
+    }
+  } finally { store.busy=false; }
+  renderStorageNote();
+}
+function saveMeta(){ markDirty("meta"); }
+function saveVeh(id){ markDirty("v_"+id); if(S.meta.consentCommunity) markDirty("community"); }
+
+async function initCloud(){
+  if(!window.claude||!window.claude.use) return;
+  try{
+    const [db,user,dl]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("downloads")]);
+    downloads=dl||null;
+    if(!db||!user) return;
+    const id=await user.id(); if(!id) return;
+    store.db=db; store.uid=id;
+    const timer=setTimeout(()=>toast("Cloud-Speicher antwortet nicht – lokal gespeichert"),10000);
+    const snap=await db.collection("data/users/"+id).get();
+    clearTimeout(timer);
+    store.mode="cloud";
+    if(snap.size){
+      const fresh={meta:{...S.meta},vehicles:{}};
+      snap.docs.forEach(d=>{
+        const v=d.data(); if(!v) return;
+        if(d.id==="meta") fresh.meta={...fresh.meta,...JSON.parse(JSON.stringify(v))};
+        else if(d.id.startsWith("v_")) fresh.vehicles[d.id.slice(2)]=JSON.parse(JSON.stringify(v));
+      });
+      S=fresh; lsSet();
+    } else if(Object.keys(S.vehicles).length){
+      Object.keys(S.vehicles).forEach(k=>store.dirty.add("v_"+k)); store.dirty.add("meta"); flush();
+    }
+    render();
+    loadCommunity();
+  }catch(e){ /* bleibt lokal */ }
+}
+
+/* ================= Community-Intervalle ================= */
+const slug=x=>String(x||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"");
+function mkey(v){ return [v.typ,slug(v.marke),slug(v.modell),slug(v.kraftstoff)].join("_"); }
+function communityPayload(){
+  if(!S.meta.consentCommunity) return null;
+  const vehicles=vList().map(v=>({key:mkey(v),typ:v.typ,marke:v.marke||"",modell:v.modell||"",baujahr:v.baujahr||"",kraftstoff:v.kraftstoff||"",
+    intervals:(v.intervals||[]).filter(i=>SHARE_SRC.includes(i.src)).map(i=>({name:i.name,km:Number(i.km)||0,mo:Number(i.mo)||0,src:i.src}))}))
+    .filter(x=>x.intervals.length&&x.marke&&x.modell);
+  return vehicles.length?{updated:Date.now(),vehicles}:null;
+}
+const median=a=>{a=a.filter(x=>x>0).sort((x,y)=>x-y);if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:Math.round((a[m-1]+a[m])/2);};
+async function loadCommunity(){
+  if(!store.db) return;
+  try{
+    const snap=await store.db.collection("community").get();
+    const g={};
+    snap.docs.forEach(d=>{const body=d.data(); if(!body||!Array.isArray(body.vehicles)) return;
+      body.vehicles.forEach(veh=>{ if(!veh||!veh.key||!Array.isArray(veh.intervals)) return;
+        const grp=g[veh.key]=g[veh.key]||{marke:veh.marke,modell:veh.modell,users:new Set(),years:[],items:{}};
+        grp.users.add(d.id); if(veh.baujahr) grp.years.push(Number(veh.baujahr));
+        veh.intervals.slice(0,40).forEach(iv=>{ const n=String(iv.name||"").trim().slice(0,60); if(!n) return; const k=n.toLowerCase();
+          const it=grp.items[k]=grp.items[k]||{name:n,km:[],mo:[],users:new Set(),hb:0};
+          if(it.users.has(d.id)) return; it.users.add(d.id); it.km.push(Number(iv.km)||0); it.mo.push(Number(iv.mo)||0); if(iv.src==="handbuch") it.hb++; });
+      });
+    });
+    COMM={loaded:true,groups:g}; if(UI.tab==="int") render();
+  }catch(e){ COMM.loaded=true; }
+}
+function communityFor(v){
+  const g=COMM.groups[mkey(v)]; if(!g) return null;
+  const items=Object.values(g.items).filter(it=>it.users.size>=CONFIG.communityMin)
+    .map(it=>({name:it.name,km:median(it.km),mo:median(it.mo),n:it.users.size,hb:it.hb})).filter(it=>it.km||it.mo)
+    .sort((a,b)=>b.n-a.n||a.name.localeCompare(b.name));
+  if(!items.length) return null;
+  const ys=g.years.filter(Boolean); return {users:g.users.size,items,years:ys.length?[Math.min(...ys),Math.max(...ys)]:null};
+}
+function adoptCommunity(v,items){
+  v.intervals=v.intervals||[]; let n=0;
+  items.forEach(it=>{ const ex=v.intervals.find(i=>i.name.trim().toLowerCase()===it.name.toLowerCase());
+    if(ex){ if(ex.src==="vorlage"||!ex.src){ ex.km=it.km; ex.mo=it.mo; ex.src="community"; n++; } }
+    else { v.intervals.push({id:uid(),name:it.name,km:it.km,mo:it.mo,lastKm:curKm(v),lastDate:v.kaufdatum||today(),src:"community"}); n++; } });
+  saveVeh(v.id); render(); toast(n?`${n} Community-Wert${n===1?"":"e"} übernommen`:"Schon alles vorhanden (eigene Werte bleiben unverändert)");
+}
+function communityCard(v){
+  const c=communityFor(v);
+  if(!store.db) return `<div class="card small muted">👥 Community-Werte kommen mit der Online-Version (eigene Datenbank). In dieser Testversion bleiben deine Daten nur auf deinem Gerät.</div>`;
+  if(!COMM.loaded) return `<div class="card small muted">👥 Community-Werte werden geladen …</div>`;
+  if(!c) return `<div class="card small muted">👥 Für ${esc(vName(v))} (${esc(v.kraftstoff||"")}) gibt es noch keine Community-Werte.${S.meta.consentCommunity?"":` Teile deine Werte aus dem Handbuch und hilf anderen Fahrern – <a href="#" data-act="gotoMore" style="color:var(--accent2)">Teilen aktivieren</a>.`}</div>`;
+  return `<div class="card"><h2>👥 Community-Werte <span class="pill r">${c.users} Fahrer</span></h2>
+    <div class="small muted" style="margin-bottom:6px">${esc(vName(v))} · ${esc(v.kraftstoff||"")}${c.years?` · Baujahre ${c.years[0]}${c.years[1]!==c.years[0]?"–"+c.years[1]:""}`:""} · Median der geteilten Angaben</div>
+    <div class="list">${c.items.map((it,i)=>`<div class="item" style="cursor:default"><div class="grow"><b class="ellip">${esc(it.name)}</b><div class="small muted">${[it.km?"alle "+num(it.km)+" km":"",it.mo?"alle "+it.mo+" Mon.":""].filter(Boolean).join(" · ")} · ${it.n}× genannt${it.hb?` · ${it.hb}× laut Handbuch`:""}</div></div><button class="btn sm" data-adopt="${i}">Übernehmen</button></div>`).join("")}</div>
+    <button class="btn block" style="margin-top:8px" data-adopt="all">Alle übernehmen</button>
+    <p class="small muted" style="margin:8px 0 0">Angaben anderer Nutzer – ohne Gewähr. Eigene Werte (z. B. aus dem Handbuch) werden nicht überschrieben.</p></div>`;
+}
+
+/* ================= Helfer ================= */
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=n=>(Number(n)||0).toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const num=n=>(Number(n)||0).toLocaleString("de-DE");
+const fdate=d=>d?new Date(d+"T00:00:00").toLocaleDateString("de-DE"):"–";
+const $=s=>document.querySelector(s);
+const V=()=>S.vehicles[S.meta.activeId];
+const vList=()=>Object.values(S.vehicles).sort((a,b)=>(a.created||0)-(b.created||0));
+function toast(t){ const d=document.createElement("div"); d.className="toast"; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),2600); }
+function addMonths(d,m){ const x=new Date(d+"T00:00:00"); x.setMonth(x.getMonth()+Number(m)); return x; }
+function vName(v){ return [v.marke,v.modell].filter(Boolean).join(" ")||"Fahrzeug"; }
+function curKm(v){ return Math.max(Number(v.kmAktuell)||0,...(v.entries||[]).map(e=>Number(e.km)||0)); }
+function kmDate(v){ const k=curKm(v); const e=(v.entries||[]).filter(x=>Number(x.km)===k).sort((a,b)=>(b.date||"").localeCompare(a.date||""))[0];
+  if(e&&(!v.kmDate||Number(v.kmAktuell)<k||e.date>v.kmDate)) return e.date; return v.kmDate||null; }
+
+function ivStatus(iv,v){
+  const km=curKm(v); let kmLeft=null,daysLeft=null,fr=0;
+  if(iv.km>0){ const last=Number(iv.lastKm)||0; kmLeft=last+Number(iv.km)-km; fr=Math.max(fr,(km-last)/iv.km); }
+  if(iv.mo>0){ const base=iv.lastDate||v.kaufdatum||today(); const due=addMonths(base,iv.mo); daysLeft=Math.round((due-new Date())/864e5); const tot=(due-new Date(base+"T00:00:00"))/864e5; fr=Math.max(fr,1-daysLeft/tot); }
+  let st="ok";
+  if((kmLeft!==null&&kmLeft<=0)||(daysLeft!==null&&daysLeft<=0)) st="bad";
+  else if((kmLeft!==null&&kmLeft<Math.max(500,iv.km*.1))||(daysLeft!==null&&daysLeft<45)) st="warn";
+  const parts=[]; if(kmLeft!==null) parts.push(kmLeft<=0?`${num(-kmLeft)} km überfällig`:`noch ${num(kmLeft)} km`);
+  if(daysLeft!==null) parts.push(daysLeft<=0?`${-daysLeft} Tage überfällig`:`noch ${daysLeft} Tage`);
+  return {st,fr:Math.min(1,Math.max(0,fr)),txt:parts.join(" · ")||"kein Intervall"};
+}
+const stColor={ok:"var(--ok)",warn:"var(--warn)",bad:"var(--bad)"};
+const stLabel={ok:"OK",warn:"Bald fällig",bad:"Fällig"};
+
+/* ================= Rendering ================= */
+const TABS=[
+  {id:"home",n:"Übersicht",i:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'},
+  {id:"log",n:"Einträge",i:'<path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h4"/>'},
+  {id:"int",n:"Intervalle",i:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>'},
+  {id:"shop",n:"Teile",i:'<path d="M3 4h2l2.4 11h11L21 7H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>'},
+  {id:"more",n:"Mehr",i:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'}
+];
+function render(){
+  if(S.meta.activeId&&!S.vehicles[S.meta.activeId]) S.meta.activeId=null;
+  if(!S.meta.activeId&&vList().length) S.meta.activeId=vList()[0].id;
+  // header
+  const vs=vList();
+  $("#vsel").innerHTML=vs.length?`<select id="vpick">${vs.map(v=>`<option value="${v.id}" ${v.id===S.meta.activeId?"selected":""}>${v.typ==="motorrad"?"🏍️":"🚗"} ${esc(vName(v))}</option>`).join("")}</select><button class="btn sm" id="vadd" title="Fahrzeug hinzufügen">＋</button>`:"";
+  if(vs.length){ $("#vpick").onchange=e=>{S.meta.activeId=e.target.value;saveMeta();render();}; $("#vadd").onclick=()=>newVehicle(); }
+  $("#tabs").innerHTML=TABS.map(t=>`<button class="${UI.tab===t.id?"on":""}" data-t="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${t.i}</svg>${t.n}</button>`).join("");
+  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{UI.tab=b.dataset.t;render();window.scrollTo(0,0);});
+  const m=$("#main");
+  if(!V()&&UI.tab!=="more"){ m.innerHTML=welcome(); bindWelcome(); return; }
+  ({home:viewHome,log:viewLog,int:viewInt,shop:viewShop,more:viewMore})[UI.tab](m);
+}
+
+function welcome(){
+  return `<div class="card empty">
+    <div class="e">🏍️🚗</div>
+    <h2 style="justify-content:center;font-size:28px">Dein digitales Serviceheft</h2>
+    <p class="muted">Wartung, Reparaturen, Tankstopps und Kosten – für Selbstschrauber und alle, die lückenlose Aufzeichnungen wollen.</p>
+    <p class="small muted">Dein erstes Fahrzeug ist dauerhaft gratis.</p>
+    <div class="row" style="justify-content:center;margin-top:14px"><button class="btn primary" id="w-auto">🚗 Auto anlegen</button><button class="btn primary" id="w-moto">🏍️ Motorrad anlegen</button></div>
+  </div>`;
+}
+function bindWelcome(){ $("#w-auto").onclick=()=>vehicleForm(null,"auto"); $("#w-moto").onclick=()=>vehicleForm(null,"motorrad"); }
+
+function adBanner(){
+  if(S.meta.premium) return "";
+  const a=CONFIG.ads[Math.floor(Date.now()/60000)%CONFIG.ads.length];
+  return `<div class="ad"><div style="font-size:28px">${a.e}</div><div class="grow"><div class="lbl">Anzeige</div><b>${esc(a.t)}</b><div class="small muted">${esc(a.s)}</div></div><button class="btn sm ghost" data-act="premium">Werbefrei</button></div>`;
+}
+
+function costs(v,from){
+  const es=(v.entries||[]).filter(e=>!from||e.date>=from);
+  const by={}; let total=0;
+  es.forEach(e=>{const c=Number(e.cost)||0; total+=c; by[e.cat]=(by[e.cat]||0)+c;});
+  return {total,by,n:es.length};
+}
+function fuelStats(v){
+  const f=(v.entries||[]).filter(e=>e.cat==="fuel"&&e.km&&e.liter).sort((a,b)=>a.km-b.km);
+  if(f.length<2) return null;
+  let l=0; for(let i=1;i<f.length;i++) l+=Number(f[i].liter)||0;
+  const km=f[f.length-1].km-f[0].km; return km>0?(l/km*100):null;
+}
+
+function backupBanner(){
+  const lb=S.meta.lastBackup; const d=lb?Math.round((new Date()-new Date(lb+"T00:00:00"))/864e5):null;
+  const hasData=vList().some(v=>(v.entries||[]).length);
+  if(!hasData||(d!==null&&d<14)) return "";
+  return `<div class="backup"><div style="font-size:24px">☁️</div><div class="grow"><b>${lb?`Letztes Backup vor ${d} Tagen`:"Noch kein Backup"}</b><div class="small muted">Sichere deine Daten in iCloud Drive.</div></div><button class="btn sm primary" data-act="backup">Sichern</button></div>`;
+}
+function viewHome(m){
+  const v=V(), km=curKm(v), c=costs(v), cy=costs(v,new Date().getFullYear()+"-01-01");
+  const owned=Math.max(0,km-(Number(v.kmKauf)||0));
+  const perKm=owned>0?c.total/owned:null;
+  const ivs=(v.intervals||[]).map(iv=>({iv,s:ivStatus(iv,v)})).sort((a,b)=>b.s.fr-a.s.fr);
+  const due=ivs.filter(x=>x.s.st!=="ok");
+  const recent=[...(v.entries||[])].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,4);
+  const cons=fuelStats(v);
+  m.innerHTML=`${backupBanner()}
+  <div class="card hero">
+    <div class="row"><div class="grow"><div class="muted small">${v.typ==="motorrad"?"Motorrad":"Auto"} · ${esc(v.baujahr||"")}</div><div class="big">${esc(vName(v))}</div><div class="muted small">${esc(v.variante||"")}</div></div>
+    ${v.kennzeichen?`<div class="plate">${esc(v.kennzeichen)}</div>`:""}</div>
+    <div class="row" style="margin-top:10px;align-items:flex-end"><div class="grow"><div class="muted small">Kilometerstand${kmDate(v)?" · Stand "+fdate(kmDate(v)):""}</div><div class="km">${num(km)} km</div></div><button class="btn sm" data-act="km">km aktualisieren</button></div>
+    ${v.vin?`<div class="small muted" style="margin-top:4px">FIN: <span style="font-family:monospace">${esc(v.vin)}</span></div>`:`<div class="small" style="margin-top:4px;color:var(--warn)">FIN fehlt – <a href="#" data-act="editv" style="color:var(--accent2)">jetzt ergänzen</a></div>`}
+  </div>
+  <div class="row" style="margin-bottom:12px"><button class="btn primary grow" data-act="entry">＋ Eintrag</button><button class="btn grow" data-act="fuel">⛽ Tanken</button></div>
+  <div class="card"><h2>⚠️ Fällig ${due.length?`<span class="pill ${due.some(x=>x.s.st==="bad")?"bad":"warn"} r">${due.length}</span>`:""}</h2>
+    ${ivs.length?(due.length?due.slice(0,4):ivs.slice(0,2)).map(x=>ivRow(x.iv,x.s)).join(""):`<p class="muted small">Noch keine Intervalle. <a href="#" data-act="gotoInt" style="color:var(--accent2)">Vorlagen übernehmen</a></p>`}
+  </div>
+  ${adminCard(v)}
+  ${adBanner()}
+  <div class="card"><h2>💶 Kosten</h2>
+    <div class="grid3">
+      <div class="stat"><b>${eur(cy.total)}</b><span>Dieses Jahr</span></div>
+      <div class="stat"><b>${eur(c.total)}</b><span>Gesamt</span></div>
+      <div class="stat"><b>${perKm!==null?perKm.toLocaleString("de-DE",{maximumFractionDigits:2})+" €":"–"}</b><span>pro km</span></div>
+    </div>
+    ${cons?`<div class="small muted" style="margin-top:8px">Ø Verbrauch: <b style="color:var(--text)">${cons.toLocaleString("de-DE",{maximumFractionDigits:1})} l/100 km</b></div>`:""}
+    <div style="margin-top:10px">${catBars(c)}</div>
+  </div>
+  <div class="card"><h2>🧾 Letzte Einträge <button class="btn sm r" data-act="gotoLog">Alle</button></h2>
+    <div class="list">${recent.length?recent.map(entryRow).join(""):`<p class="muted small">Noch keine Einträge.</p>`}</div></div>`;
+  bindCommon(m);
+}
+function nextYearly(d){ if(!d) return null; const t=new Date(); t.setHours(0,0,0,0); const x=new Date(d+"T00:00:00"); x.setFullYear(t.getFullYear()); if(x<t) x.setFullYear(t.getFullYear()+1); return x; }
+const days=d=>Math.round((d-new Date(new Date().toDateString()))/864e5);
+const fd=d=>d.toLocaleDateString("de-DE");
+function adminCard(v){
+  const rows=[];
+  if(v.huBis){ const end=new Date(v.huBis+"-01T00:00:00"); end.setMonth(end.getMonth()+1); end.setDate(0); const dd=days(end);
+    rows.push(`<div class="item" style="cursor:default"><div class="ico">📋</div><div class="grow"><b>HU/AU</b><div class="small muted">gültig bis ${end.toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})}</div></div><span class="pill ${dd<0?"bad":dd<90?"warn":"ok"}">${dd<0?"abgelaufen":dd<90?"in "+dd+" T.":"OK"}</span></div>`); }
+  if(v.versicherung||v.vBeitrag||v.vFaellig){
+    const hf=nextYearly(v.vFaellig); let kd=null; if(hf){ kd=new Date(hf); kd.setMonth(kd.getMonth()-1); }
+    const kdd=kd?days(kd):null;
+    rows.push(`<div class="item" style="cursor:default"><div class="ico">🛡️</div><div class="grow"><b>${esc(v.versicherung||"Versicherung")}${v.vTarif?" · "+esc(v.vTarif):""}</b><div class="small muted">${v.vBeitrag?eur(v.vBeitrag)+"/Jahr":""}${v.vSf?" · "+esc(v.vSf):""}${hf?" · fällig "+fd(hf):""}</div>${kd&&kdd>=0?`<div class="small" style="color:${kdd<30?"var(--warn)":"var(--muted)"}">Kündigungsstichtag: ${fd(kd)} (noch ${kdd} Tage)</div>`:""}</div></div>`);
+  }
+  if(!rows.length) return `<div class="card small muted">🛡️ Versicherung & HU-Termin noch nicht hinterlegt – <a href="#" data-act="editv" style="color:var(--accent2)">jetzt ergänzen</a></div>`;
+  const year=new Date().getFullYear(); const booked=(v.entries||[]).some(e=>e.cat==="fees"&&e.date>=year+"-01-01"&&/versicherung/i.test(e.title||""));
+  return `<div class="card"><h2>🗂️ Verwaltung</h2><div class="list">${rows.join("")}</div>${v.vBeitrag&&!booked?`<button class="btn sm block" style="margin-top:8px" data-act="bookIns">Beitrag ${year} als Kosten erfassen</button>`:""}</div>`;
+}
+function catBars(c){
+  const ks=Object.keys(c.by).filter(k=>c.by[k]>0).sort((a,b)=>c.by[b]-c.by[a]); if(!ks.length) return "";
+  const mx=c.by[ks[0]];
+  return ks.map(k=>`<div class="cat-bar"><div class="n">${CATS[k]?.e||""} ${esc(CATS[k]?.n||k)}</div><div class="b"><i style="width:${c.by[k]/mx*100}%"></i></div><div class="v">${eur(c.by[k])}</div></div>`).join("");
+}
+function ivRow(iv,s,edit){
+  return `<div class="list"><div class="item" data-iv="${iv.id}"><div class="grow"><div class="row"><b class="grow ellip">${esc(iv.name)}</b><span class="pill ${s.st}">${stLabel[s.st]}</span>${edit?`<button class="btn sm" data-ivedit="${iv.id}" title="Intervall anpassen" style="margin-left:4px">✏️</button>`:""}</div>
+  <div class="small muted">${[iv.km?"alle "+num(iv.km)+" km":"",iv.mo?"alle "+iv.mo+" Mon.":""].filter(Boolean).join(" · ")}</div>
+  <div class="small muted">${s.txt}${iv.src&&iv.src!=="vorlage"?` · ${SRC[iv.src]||""}`:""}</div><div class="bar"><i style="width:${Math.max(4,s.fr*100)}%;background:${stColor[s.st]}"></i></div></div></div></div>`;
+}
+function entryRow(e){
+  return `<div class="item" data-entry="${e.id}"><div class="ico">${CATS[e.cat]?.e||"📎"}</div><div class="grow"><div class="ellip"><b>${esc(e.title||CATS[e.cat]?.n)}</b></div><div class="small muted ellip">${fdate(e.date)} · ${num(e.km)} km${e.by==="self"?" · selbst":e.by==="rent"?" · Mietwerkstatt"+(e.workshop?" "+esc(e.workshop):""):e.workshop?" · "+esc(e.workshop):""}</div></div><div class="amt">${eur(e.cost)}</div></div>`;
+}
+
+function viewLog(m){
+  const v=V(); const all=[...(v.entries||[])].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.km-a.km));
+  const list=UI.filter==="all"?all:all.filter(e=>e.cat===UI.filter);
+  const sum=list.reduce((s,e)=>s+(Number(e.cost)||0),0);
+  m.innerHTML=`<div class="row" style="margin-bottom:10px"><h2 class="grow" style="font-size:21px;text-transform:uppercase">Serviceheft</h2><button class="btn primary sm" data-act="entry">＋ Eintrag</button></div>
+  <div class="chips"><div class="chip ${UI.filter==="all"?"on":""}" data-f="all">Alle</div>${Object.entries(CATS).map(([k,c])=>`<div class="chip ${UI.filter===k?"on":""}" data-f="${k}">${c.e} ${c.n}</div>`).join("")}</div>
+  <div class="card"><div class="row small muted" style="margin-bottom:6px"><span class="grow">${list.length} Einträge</span><span>Summe <b style="color:var(--text)">${eur(sum)}</b></span></div>
+  <div class="list">${list.length?list.map(entryRow).join(""):`<div class="empty muted">Keine Einträge in dieser Kategorie.</div>`}</div></div>`;
+  m.querySelectorAll("[data-f]").forEach(c=>c.onclick=()=>{UI.filter=c.dataset.f;render();});
+  bindCommon(m);
+}
+
+function viewInt(m){
+  const v=V(); const ivs=(v.intervals||[]).map(iv=>({iv,s:ivStatus(iv,v)})).sort((a,b)=>b.s.fr-a.s.fr);
+  m.innerHTML=`<div class="row" style="margin-bottom:10px"><h2 class="grow" style="font-size:21px;text-transform:uppercase">Wartungsintervalle</h2><button class="btn primary sm" data-act="newiv">＋ Intervall</button></div>
+  ${ivs.length?`<p class="small muted" style="margin:0 0 8px">Tippe auf ✏️, um ein Intervall an deine eigenen Werte anzupassen (z. B. Ölwechsel alle 10.000 km).</p><div class="card">${ivs.map(x=>ivRow(x.iv,x.s,true)).join("")}</div>`:`<div class="card empty"><div class="e">⏱️</div><p>Noch keine Intervalle für dieses ${v.typ==="motorrad"?"Motorrad":"Auto"}.</p><button class="btn primary" data-act="presets">Typische Intervalle übernehmen</button><p class="small muted">Werte sind Richtwerte – bitte mit den Herstellerangaben abgleichen.</p></div>`}
+  ${ivs.length?`<button class="btn block ghost" data-act="presets" style="margin-bottom:12px">Fehlende Vorlagen ergänzen</button>`:""}
+  ${communityCard(v)}`;
+  const cs=communityFor(v);
+  m.querySelectorAll("[data-adopt]").forEach(b=>b.onclick=()=>adoptCommunity(v,b.dataset.adopt==="all"?cs.items:[cs.items[Number(b.dataset.adopt)]]));
+  bindCommon(m);
+}
+
+function viewShop(m){
+  const v=V(); const t=v.typ;
+  const partners=CONFIG.partners.filter(p=>p.types.includes(t));
+  const cart=S.meta.cart.filter(c=>c.vid===v.id);
+  m.innerHTML=`<h2 style="font-size:21px;text-transform:uppercase;margin-bottom:10px">Teile finden</h2>
+  <div class="card"><div class="small muted" style="margin-bottom:8px">Suche passend zu <b style="color:var(--text)">${esc(vName(v))} ${esc(v.baujahr||"")}</b>${v.hsn&&v.tsn?` · HSN/TSN ${esc(v.hsn)}/${esc(v.tsn)}`:""}</div>
+    <div class="row"><input class="i" id="q" placeholder="z. B. Bremsbeläge vorne"><button class="btn primary" id="qgo">Suchen</button></div>
+    <div class="chips" style="margin-top:10px">${PART_SUGGEST[t].map(p=>`<div class="chip" data-sug="${esc(p)}">${esc(p)}</div>`).join("")}</div>
+    <div id="res"></div>
+  </div>
+  <div class="card"><h2>🛒 Einkaufsliste <span class="pill r">${cart.length}</span></h2>
+    ${cart.length?`<div class="list">${cart.map(c=>`<div class="item" style="cursor:default"><div class="grow"><b>${esc(c.name)}</b><div class="small muted">${c.qty}× · ${partners.map(p=>`<a href="${p.url(encodeURIComponent(c.name+" "+vName(v)))}" target="_blank" rel="noopener sponsored" style="color:var(--accent2)">${p.name}</a>`).join(" · ")}</div></div><button class="btn sm danger" data-rmcart="${c.id}">✕</button></div>`).join("")}</div>
+    <button class="btn block" style="margin-top:8px" data-act="cartToEntry">Als gekauft ins Serviceheft übernehmen</button>`:`<p class="muted small">Leg Teile auf die Liste – z. B. für den nächsten Service – und bestell sie später beim Händler deiner Wahl.</p>`}
+  </div>
+  ${adBanner()}
+  <p class="small muted">* Links zu Händlern sind Affiliate-Links (Werbung). Beim Kauf erhalten wir ggf. eine Provision – für dich ändert sich der Preis nicht.</p>`;
+  const show=q=>{
+    if(!q.trim()) return;
+    const qq=encodeURIComponent(q+" "+vName(v)+(v.baujahr?" "+v.baujahr:""));
+    $("#res").innerHTML=`<div class="list" style="margin-top:8px">${partners.map(p=>`<a class="item" style="text-decoration:none;color:inherit" href="${p.url(qq)}" target="_blank" rel="noopener sponsored"><div class="ico">🏪</div><div class="grow"><b>${p.name}</b><div class="small muted ellip">„${esc(q)}“ für ${esc(vName(v))}</div></div><span class="small" style="color:var(--accent2)">Öffnen ↗ *</span></a>`).join("")}</div>
+    <button class="btn block" style="margin-top:8px" id="tocart">＋ „${esc(q)}“ auf Einkaufsliste</button>`;
+    $("#tocart").onclick=()=>{S.meta.cart.push({id:uid(),vid:v.id,name:q,qty:1});saveMeta();toast("Auf Einkaufsliste");render();};
+  };
+  $("#qgo").onclick=()=>show($("#q").value);
+  $("#q").onkeydown=e=>{if(e.key==="Enter")show($("#q").value);};
+  m.querySelectorAll("[data-sug]").forEach(c=>c.onclick=()=>{$("#q").value=c.dataset.sug;show(c.dataset.sug);});
+  m.querySelectorAll("[data-rmcart]").forEach(b=>b.onclick=()=>{S.meta.cart=S.meta.cart.filter(c=>c.id!==b.dataset.rmcart);saveMeta();render();});
+  bindCommon(m);
+}
+
+function viewMore(m){
+  const vs=vList();
+  m.innerHTML=`
+  <div class="card"><h2>🚘 Meine Fahrzeuge <span class="pill r">${vs.length}${S.meta.premium?"":" / "+CONFIG.freeVehicles+" gratis"}</span></h2>
+    <div class="list">${vs.map(v=>`<div class="item" data-editv="${v.id}"><div class="ico">${v.typ==="motorrad"?"🏍️":"🚗"}</div><div class="grow"><b>${esc(vName(v))}</b><div class="small muted">${esc(v.kennzeichen||"ohne Kennzeichen")} · ${num(curKm(v))} km</div></div><span class="small muted">Bearbeiten ›</span></div>`).join("")}</div>
+    <button class="btn block" style="margin-top:8px" data-act="newv">＋ Fahrzeug hinzufügen</button>
+  </div>
+  <div class="card"><h2>⭐ Premium ${S.meta.premium?`<span class="pill ok r">aktiv</span>`:""}</h2>
+    <p class="small muted">Unbegrenzt Fahrzeuge, keine Werbung, PDF-Serviceheft für den Verkauf, CSV-Export.</p>
+    <button class="btn ${S.meta.premium?"":"primary"} block" data-act="premium">${S.meta.premium?"Premium verwalten":"Premium ansehen"}</button></div>
+  <div class="card"><h2>📤 Export</h2>
+    <div class="list">
+      <div class="item" data-exp="json"><div class="ico">☁️</div><div class="grow"><b>Backup in iCloud Drive</b><div class="small muted">Alle Daten als Datei sichern – „In Dateien sichern“ → iCloud Drive</div></div></div>
+      <div class="item" data-exp="csv"><div class="ico">📊</div><div class="grow"><b>Einträge als CSV ${S.meta.premium?"":'<span class="badge-pro">PRO</span>'}</b><div class="small muted">Für Excel / Numbers</div></div></div>
+      <div class="item" data-exp="report"><div class="ico">📘</div><div class="grow"><b>Serviceheft-Bericht ${S.meta.premium?"":'<span class="badge-pro">PRO</span>'}</b><div class="small muted">Druckfertig – ideal beim Fahrzeugverkauf</div></div></div>
+      <div class="item" data-exp="import"><div class="ico">📥</div><div class="grow"><b>Daten importieren</b><div class="small muted">Backup aus iCloud Drive wiederherstellen</div></div></div>
+    </div></div>
+  <div class="card"><h2>👥 Community-Intervalle</h2>
+    <label class="toggle"><input type="checkbox" id="ccomm" ${S.meta.consentCommunity?"checked":""}><div><b>Meine Intervallwerte anonym teilen</b><div class="small muted">Geteilt werden nur Marke, Modell, Baujahr, Antrieb und Intervalle, die du als „Handbuch“, „Werkstatt“ oder „Eigene Erfahrung“ markiert hast. Keine FIN, kein Kennzeichen, keine Kosten. Jederzeit widerrufbar – deine Angaben werden dann entfernt.</div></div></label>
+  </div>
+  <div class="card"><h2>🔒 Datenschutz & Datenfreigabe</h2>
+    <label class="toggle"><input type="checkbox" id="consent" ${S.meta.consentShare?"checked":""}><div><b>Anonymisierte Fahrzeugdaten teilen</b><div class="small muted">Freiwillig. Hilft, Fahrzeughistorien-Dienste zu verbessern. Jederzeit widerrufbar. Ohne Namen, E-Mail oder Kennzeichen.</div></div></label>
+    ${S.meta.consentDate?`<div class="small muted">Status geändert am ${fdate(S.meta.consentDate)}</div>`:""}
+    <div class="row wrap" style="margin-top:8px"><button class="btn sm" data-act="privacy">Datenschutzerklärung</button><button class="btn sm" data-act="agb">AGB</button><button class="btn sm danger" data-act="wipe">Alle Daten löschen</button></div>
+  </div>
+  <div class="card small muted" id="storenote"></div>
+  ${adBanner()}`;
+  m.querySelectorAll("[data-editv]").forEach(i=>i.onclick=()=>vehicleForm(S.vehicles[i.dataset.editv]));
+  m.querySelectorAll("[data-exp]").forEach(i=>i.onclick=()=>doExport(i.dataset.exp));
+  $("#consent").onchange=e=>{S.meta.consentShare=e.target.checked;S.meta.consentDate=today();saveMeta();toast(e.target.checked?"Danke! Freigabe aktiv":"Freigabe widerrufen");render();};
+  $("#ccomm").onchange=e=>{S.meta.consentCommunity=e.target.checked;saveMeta();markDirty("community");toast(e.target.checked?"Danke fürs Teilen!":"Community-Teilen beendet");setTimeout(loadCommunity,2500);};
+  renderStorageNote();
+  bindCommon(m);
+}
+function renderStorageNote(){
+  const n=$("#storenote"); if(!n) return;
+  n.innerHTML=store.mode==="cloud"?"☁️ Deine Daten werden in deinem Konto gespeichert und sind auf deinen Geräten verfügbar.":`📱 Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig in iCloud Drive (Backup oben).${S.meta.lastBackup?" Letztes Backup: "+fdate(S.meta.lastBackup)+".":" Noch kein Backup."}`;
+}
+
+function bindCommon(m){
+  m.querySelectorAll("[data-act]").forEach(b=>b.onclick=e=>{e.preventDefault();ACT[b.dataset.act]&&ACT[b.dataset.act]();});
+  m.querySelectorAll("[data-entry]").forEach(i=>i.onclick=()=>entryForm(V().entries.find(e=>e.id===i.dataset.entry)));
+  m.querySelectorAll("[data-iv]").forEach(i=>i.onclick=()=>ivSheet(V().intervals.find(x=>x.id===i.dataset.iv)));
+  m.querySelectorAll("[data-ivedit]").forEach(b=>b.onclick=e=>{e.stopPropagation();ivForm(V().intervals.find(x=>x.id===b.dataset.ivedit));});
+}
+const ACT={
+  km:()=>kmSheet(), entry:()=>entryForm(null), fuel:()=>entryForm(null,"fuel"), editv:()=>vehicleForm(V()),
+  gotoInt:()=>{UI.tab="int";render();}, gotoMore:()=>{UI.tab="more";render();}, gotoLog:()=>{UI.tab="log";render();}, newiv:()=>ivForm(null),
+  presets:()=>applyPresets(), backup:()=>backupNow(),
+  bookIns:()=>{const v=V();entryForm({cat:"fees",title:"Kfz-Versicherung "+new Date().getFullYear()+(v.versicherung?" ("+v.versicherung+")":""),date:today(),km:curKm(v),cost:v.vBeitrag,by:"self"});}, premium:()=>premiumSheet(), newv:()=>newVehicle(),
+  privacy:()=>legalSheet("privacy"), agb:()=>legalSheet("agb"), wipe:()=>confirmSheet("Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.",wipeAll),
+  cartToEntry:()=>{const v=V();const items=S.meta.cart.filter(c=>c.vid===v.id);entryForm(null,"parts",items.map(c=>c.qty+"× "+c.name).join("\n"));}
+};
+
+/* ================= Sheets / Formulare ================= */
+function sheet(title,html,onMount){
+  $("#overlay").innerHTML=`<div class="sheet-bg"><div class="sheet"><h3>${title}<button class="x" id="sx">×</button></h3>${html}</div></div>`;
+  const bg=$("#overlay .sheet-bg");
+  bg.onclick=e=>{if(e.target===bg)close();}; $("#sx").onclick=close;
+  onMount&&onMount($("#overlay .sheet"));
+}
+function close(){ $("#overlay").innerHTML=""; }
+function confirmSheet(msg,yes){
+  sheet("Bestätigen",`<p>${esc(msg)}</p><div class="row"><button class="btn grow" id="cn">Abbrechen</button><button class="btn danger grow" id="cy">Ja, löschen</button></div>`,()=>{$("#cn").onclick=close;$("#cy").onclick=()=>{close();yes();};});
+}
+function field(name,label,val,type="text",extra=""){
+  return `<label class="f"><span>${label}</span><input class="i" name="${name}" type="${type}" value="${esc(val??"")}" ${extra}></label>`;
+}
+function sel(name,label,val,opts){
+  return `<label class="f"><span>${label}</span><select class="i" name="${name}">${opts.map(o=>{const [k,n]=Array.isArray(o)?o:[o,o];return `<option value="${esc(k)}" ${String(val)===String(k)?"selected":""}>${esc(n)}</option>`;}).join("")}</select></label>`;
+}
+function formData(root){ const o={}; root.querySelectorAll("[name]").forEach(el=>{ if(el.type==="checkbox") o[el.name]=el.checked; else o[el.name]=el.value.trim(); }); return o; }
+
+function newVehicle(){
+  if(!S.meta.premium&&vList().length>=CONFIG.freeVehicles){ premiumSheet("Dein erstes Fahrzeug ist gratis. Für weitere Fahrzeuge brauchst du Premium."); return; }
+  vehicleForm(null);
+}
+function vehicleForm(v,typ){
+  const isNew=!v; v=v||{typ:typ||"auto"};
+  const fuelOpts=["Benzin","Diesel","Elektro","Hybrid (Benzin)","Hybrid (Diesel)","Autogas (LPG)","Erdgas (CNG)","Sonstiges"];
+  sheet(isNew?"Fahrzeug anlegen":"Fahrzeug bearbeiten",`
+  <div class="seg" id="tseg"><button data-v="auto" class="${v.typ==="auto"?"on":""}">🚗 Auto</button><button data-v="motorrad" class="${v.typ==="motorrad"?"on":""}">🏍️ Motorrad</button></div>
+  <form id="vf">
+  <fieldset><legend>Fahrzeug</legend>
+    <div class="grid2">${field("marke","Marke *",v.marke,"text","required placeholder='z. B. BMW'")}${field("modell","Modell *",v.modell,"text","required placeholder='z. B. R 1250 GS'")}</div>
+    ${field("variante","Variante / Motor",v.variante,"text","placeholder='z. B. 2.0 TDI 150 PS'")}
+    <div class="grid2">${field("baujahr","Baujahr",v.baujahr,"number","min=1900 max=2100")}${field("ez","Erstzulassung",v.ez,"date")}</div>
+    <div class="grid2">${sel("kraftstoff","Antrieb",v.kraftstoff||"Benzin",fuelOpts)}${sel("getriebe","Getriebe",v.getriebe||"Schaltgetriebe",["Schaltgetriebe","Automatik","DCT/DSG","Sonstiges"])}</div>
+    <div class="grid2">${field("kw","Leistung (kW)",v.kw,"number")}${field("ccm","Hubraum (cm³)",v.ccm,"number")}</div>
+    ${field("farbe","Farbe",v.farbe)}
+  </fieldset>
+  <fieldset><legend>Identifikation</legend>
+    ${field("vin","FIN / VIN (17 Zeichen)",v.vin,"text","maxlength=17 style='text-transform:uppercase;font-family:monospace' placeholder='WVWZZZ1KZ6W000000'")}
+    <div id="vinmsg" class="small" style="margin:-6px 0 8px"></div>
+    ${field("kennzeichen","Kennzeichen",v.kennzeichen,"text","style='text-transform:uppercase' placeholder='M-AB 1234'")}
+    <div class="grid2">${field("hsn","HSN (2.1)",v.hsn,"text","maxlength=4")}${field("tsn","TSN (2.2)",v.tsn,"text","maxlength=3")}</div>
+  </fieldset>
+  <fieldset><legend>Kauf & Laufleistung</legend>
+    <div class="grid2">${field("kaufdatum","Kaufdatum",v.kaufdatum,"date")}${field("kaufpreis","Kaufpreis (€)",v.kaufpreis,"number","step=0.01")}</div>
+    <div class="grid2">${field("kmKauf","km bei Kauf",v.kmKauf,"number")}${field("kmAktuell","km aktuell *",isNew?v.kmAktuell:curKm(v),"number","required")}</div>
+    <div class="grid2">${sel("quelle","Gekauft von",v.quelle||"",[["","–"],"Händler","Privat","Neuwagen","Sonstiges"])}${field("vorbesitzer","Vorbesitzer (Anzahl)",v.vorbesitzer,"number","min=0")}</div>
+  </fieldset>
+  <fieldset><legend>Technik & Verwaltung</legend>
+    ${field("oel","Motoröl-Spezifikation",v.oel,"text","placeholder='z. B. 5W-30 VW 504.00'")}
+    <div class="grid2">${field("reifenV","Reifen vorne",v.reifenV,"text","placeholder='205/55 R16'")}${field("reifenH","Reifen hinten",v.reifenH)}</div>
+    ${field("huBis","HU gültig bis",v.huBis,"month")}
+    <label class="f"><span>Notizen</span><textarea class="i" name="notiz">${esc(v.notiz||"")}</textarea></label>
+  </fieldset>
+  <fieldset><legend>Versicherung</legend>
+    <div class="grid2">${field("versicherung","Versicherer",v.versicherung,"text","placeholder='z. B. HUK-Coburg'")}${sel("vTarif","Deckung",v.vTarif||"",[["","–"],"Haftpflicht","Teilkasko","Vollkasko"])}</div>
+    <div class="grid2">${field("vBeitrag","Beitrag pro Jahr (€)",v.vBeitrag,"number","step=0.01")}${field("vSf","SF-Klasse",v.vSf,"text","placeholder='z. B. SF 12'")}</div>
+    <div class="grid2">${field("vNummer","Vertragsnummer",v.vNummer)}${field("vFaellig","Hauptfälligkeit",v.vFaellig||"","date")}</div>
+    <p class="small muted" style="margin:-4px 0 10px">Meist der 01.01. – die App erinnert dich an die Kündigungsfrist (1 Monat vorher).</p>
+  </fieldset>
+  <button class="btn primary block" type="submit">${isNew?"Fahrzeug speichern":"Änderungen speichern"}</button>
+  ${!isNew?`<button class="btn danger block" type="button" id="vdel" style="margin-top:8px">Fahrzeug löschen</button>`:""}
+  </form>`,root=>{
+    let t=v.typ;
+    root.querySelectorAll("#tseg button").forEach(b=>b.onclick=()=>{t=b.dataset.v;root.querySelectorAll("#tseg button").forEach(x=>x.classList.toggle("on",x===b));});
+    const vin=root.querySelector("[name=vin]");
+    const chk=()=>{const x=vin.value.toUpperCase();const m=$("#vinmsg");if(!x){m.textContent="";return;}
+      if(/[IOQ]/.test(x)) {m.style.color="var(--bad)";m.textContent="Die Buchstaben I, O und Q kommen in einer FIN nicht vor.";}
+      else if(x.length!==17){m.style.color="var(--warn)";m.textContent=`${x.length}/17 Zeichen`;}
+      else {m.style.color="var(--ok)";m.textContent="✓ Format gültig";}};
+    vin.oninput=chk; chk();
+    root.querySelector("#vf").onsubmit=e=>{
+      e.preventDefault(); const d=formData(e.target);
+      d.vin=d.vin.toUpperCase(); d.kennzeichen=d.kennzeichen.toUpperCase();
+      ["baujahr","kw","ccm","kaufpreis","kmKauf","kmAktuell","vorbesitzer","vBeitrag"].forEach(k=>d[k]=d[k]===""?"":Number(d[k]));
+      if(!isNew&&d.kmAktuell<curKm(v)){ const mx=Math.max(0,...(v.entries||[]).map(x=>Number(x.km)||0)); if(d.kmAktuell<mx){ toast(`km-Stand darf nicht unter dem letzten Eintrag liegen (${num(mx)} km)`); return; } }
+      if(isNew||d.kmAktuell!==curKm(v)) d.kmDate=today();
+      if(isNew){
+        const id=uid(); const nv={id,created:Date.now(),typ:t,...d,entries:[],intervals:[]};
+        S.vehicles[id]=nv; S.meta.activeId=id; saveVeh(id); saveMeta(); close(); UI.tab="home"; render();
+        const cs=communityFor(nv);
+        setTimeout(()=>sheet("Intervalle einrichten?",`${cs?`<div class="warnbox" style="background:rgba(60,207,122,.1);border-color:rgba(60,207,122,.35)">👥 ${cs.users} Fahrer mit ${esc(vName(nv))} haben ${cs.items.length} Intervalle geteilt.</div>`:""}<p>Sollen Wartungsintervalle angelegt werden? Du kannst sie danach anpassen.</p>
+          ${cs?`<button class="btn primary block" id="pc" style="margin-bottom:8px">Community-Werte übernehmen</button>`:""}
+          <div class="row"><button class="btn grow" id="pn">Später</button><button class="btn ${cs?"":"primary"} grow" id="py">Typische Richtwerte</button></div>`,()=>{$("#pn").onclick=close;$("#py").onclick=()=>{close();applyPresets();};const pc=$("#pc");if(pc)pc.onclick=()=>{close();UI.tab="int";adoptCommunity(nv,cs.items);};}),150);
+      } else {
+        Object.assign(v,d,{typ:t}); saveVeh(v.id); close(); render(); toast("Gespeichert");
+      }
+    };
+    const del=root.querySelector("#vdel");
+    if(del) del.onclick=()=>confirmSheet(`„${vName(v)}“ mit allen Einträgen löschen?`,()=>{delete S.vehicles[v.id]; S.meta.cart=S.meta.cart.filter(c=>c.vid!==v.id); saveVeh(v.id); S.meta.activeId=null; saveMeta(); render();});
+  });
+}
+
+function kmSheet(){
+  const v=V();
+  sheet("Kilometerstand",`<form id="kf">${field("km","Aktueller km-Stand",curKm(v),"number","required")}<button class="btn primary block">Speichern</button></form>`,()=>{
+    $("#kf").onsubmit=e=>{e.preventDefault();const k=Number(formData(e.target).km);if(k<curKm(v)){toast("Neuer Stand liegt unter dem letzten Eintrag");return;}v.kmAktuell=k;v.kmDate=today();saveVeh(v.id);close();render();};
+  });
+}
+
+function entryForm(e,cat,partsText){
+  const v=V(), isNew=!e||!e.id; e=e||{cat:cat||"service",date:today(),km:curKm(v),by:"self",parts:partsText||""};
+  const ivs=v.intervals||[];
+  if(isNew) e={...e,km:""};
+  sheet(isNew?"Neuer Eintrag":"Eintrag bearbeiten",`<form id="ef">
+    ${sel("cat","Kategorie",e.cat,Object.entries(CATS).map(([k,c])=>[k,c.e+" "+c.n]))}
+    ${field("title","Was wurde gemacht?",e.title,"text","placeholder='z. B. Ölwechsel inkl. Filter'")}
+    <div class="grid2">${field("date","Datum *",e.date,"date","required")}${field("km","km-Stand *",e.km,"number",`required min="1" inputmode="numeric" placeholder="zuletzt ${num(curKm(v))}"`)}</div>
+    <div id="kmerr" class="small" style="color:var(--bad);margin:-6px 0 10px;display:none"></div>
+    <div class="grid2">${field("cost","Kosten gesamt (€)",e.cost,"number","step=0.01")}${sel("by","Durchgeführt",e.by,[["self","🔧 Selbst"],["rent","🔧 Selbst in Mietwerkstatt"],["shop","🏭 Werkstatt"],["dealer","🏢 Vertragshändler"]])}</div>
+    <div id="fuelbox" style="display:none" class="grid2">${field("liter","Liter / kWh",e.liter,"number","step=0.01")}${sel("full","Vollgetankt?",e.full===false?"0":"1",[["1","Ja"],["0","Nein"]])}</div>
+    ${field("workshop","Werkstatt / Mietwerkstatt / Händler",e.workshop,"text","list='wslist'")}<datalist id="wslist">${[...new Set(vList().flatMap(x=>(x.entries||[]).map(y=>y.workshop).filter(Boolean)))].map(w=>`<option value="${esc(w)}">`).join("")}</datalist>
+    <label class="f"><span>Teile & Teilenummern</span><textarea class="i" name="parts" placeholder="z. B. Mann W712/95, 4,5 l Castrol Edge 5W-30">${esc(e.parts||"")}</textarea></label>
+    <label class="f"><span>Notiz</span><textarea class="i" name="note">${esc(e.note||"")}</textarea></label>
+    ${ivs.length?`<fieldset><legend>Intervalle zurücksetzen</legend>${ivs.map(iv=>`<label class="toggle" style="padding:5px 0"><input type="checkbox" name="iv_${iv.id}" ${(e.ivs||[]).includes(iv.id)?"checked":""}> ${esc(iv.name)}</label>`).join("")}</fieldset>`:""}
+    <button class="btn primary block">Speichern</button>
+    ${!isNew?`<button type="button" class="btn danger block" id="edel" style="margin-top:8px">Eintrag löschen</button>`:""}
+  </form>`,root=>{
+    const c=root.querySelector("[name=cat]"); const fb=$("#fuelbox");
+    const upd=()=>fb.style.display=c.value==="fuel"?"grid":"none"; c.onchange=upd; upd();
+    root.querySelector("#ef").onsubmit=ev=>{
+      ev.preventDefault(); const d=formData(ev.target);
+      const kmv=Number(d.km), ke=$("#kmerr"), kin=ev.target.querySelector("[name=km]");
+      const fail=msg=>{ke.textContent=msg;ke.style.display="block";kin.focus();kin.scrollIntoView({block:"center"});};
+      if(!d.km||!(kmv>0)) return fail("Bitte den km-Stand eintragen – er ist bei jedem Eintrag Pflicht.");
+      const others=(v.entries||[]).filter(x=>x.id!==e.id&&Number(x.km)>0);
+      const before=others.filter(x=>x.date<=d.date).sort((a,b)=>b.km-a.km)[0];
+      const after=others.filter(x=>x.date>d.date).sort((a,b)=>a.km-b.km)[0];
+      if(before&&kmv<before.km) return fail(`Der km-Stand ist niedriger als beim Eintrag vom ${fdate(before.date)} (${num(before.km)} km). Bitte Datum oder km prüfen.`);
+      if(after&&kmv>after.km) return fail(`Der km-Stand ist höher als beim späteren Eintrag vom ${fdate(after.date)} (${num(after.km)} km). Bitte Datum oder km prüfen.`);
+      const out={id:e.id||uid(),cat:d.cat,title:d.title,date:d.date,km:Number(d.km)||0,cost:d.cost===""?0:Number(d.cost),by:d.by,workshop:d.workshop,parts:d.parts,note:d.note};
+      if(d.cat==="fuel"){out.liter=Number(d.liter)||0;out.full=d.full==="1";}
+      out.ivs=ivs.filter(iv=>d["iv_"+iv.id]).map(iv=>iv.id);
+      out.ivs.forEach(id=>{const iv=ivs.find(x=>x.id===id); if(!iv.lastDate||out.date>=iv.lastDate){iv.lastDate=out.date;iv.lastKm=out.km;}});
+      v.entries=v.entries||[]; const kmBefore=curKm(v);
+      if(isNew) v.entries.push(out); else Object.assign(e,out);
+      const kmAfter=curKm(v);
+      if(partsText!==undefined&&isNew){ S.meta.cart=S.meta.cart.filter(x=>x.vid!==v.id); saveMeta(); }
+      saveVeh(v.id); close(); render(); toast(kmAfter>kmBefore?`Gespeichert · km-Stand jetzt ${num(kmAfter)} km`:"Eintrag gespeichert");
+    };
+    const del=root.querySelector("#edel");
+    if(del) del.onclick=()=>confirmSheet("Diesen Eintrag löschen?",()=>{v.entries=v.entries.filter(x=>x.id!==e.id);saveVeh(v.id);render();});
+  });
+}
+
+function ivSheet(iv){
+  const v=V(), s=ivStatus(iv,v);
+  sheet(esc(iv.name),`
+    <div class="row" style="margin-bottom:8px"><span class="pill ${s.st}">${stLabel[s.st]}</span><span class="small muted">${s.txt}</span></div>
+    ${iv.src?`<div class="small muted" style="margin-bottom:6px">Quelle: ${SRC[iv.src]||esc(iv.src)}</div>`:""}
+    <div class="bar" style="margin-bottom:14px"><i style="width:${Math.max(4,s.fr*100)}%;background:${stColor[s.st]}"></i></div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="stat"><b>${iv.km?num(iv.km)+" km":"–"}</b><span>Intervall km</span></div>
+      <div class="stat"><b>${iv.mo?iv.mo+" Mon.":"–"}</b><span>Intervall Zeit</span></div>
+      <div class="stat"><b>${iv.lastKm!=null&&iv.lastKm!==""?num(iv.lastKm)+" km":"–"}</b><span>Zuletzt bei</span></div>
+      <div class="stat"><b>${fdate(iv.lastDate)}</b><span>Zuletzt am</span></div>
+    </div>
+    <button class="btn primary block" id="ivdone">✓ Jetzt erledigt – Eintrag erstellen</button>
+    <div class="row" style="margin-top:8px"><button class="btn grow" id="ivshop">🛒 Teile suchen</button><button class="btn grow" id="ivedit">Bearbeiten</button></div>`,()=>{
+    $("#ivdone").onclick=()=>{close();entryForm({cat:/hu|tüv/i.test(iv.name)?"hu":"service",title:iv.name,date:today(),km:curKm(v),by:"self",ivs:[iv.id]});};
+    $("#ivedit").onclick=()=>ivForm(iv);
+    $("#ivshop").onclick=()=>{close();UI.tab="shop";render();const q=$("#q");if(q){q.value=iv.name.replace(/ \+.*/,"");$("#qgo").click();}};
+  });
+}
+function ivForm(iv){
+  const v=V(), isNew=!iv; iv=iv||{name:"",km:"",mo:"",lastKm:curKm(v),lastDate:today(),src:"handbuch"};
+  sheet(isNew?"Neues Intervall":"Intervall bearbeiten",`<form id="if">
+    ${field("name","Bezeichnung",iv.name,"text","required placeholder='z. B. Ölwechsel'")}
+    <div class="grid2">${field("km","Alle … km (0 = aus)",iv.km,"number","min=0")}${field("mo","Alle … Monate (0 = aus)",iv.mo,"number","min=0")}</div>
+    <div class="grid2">${field("lastKm","Zuletzt bei km",iv.lastKm,"number")}${field("lastDate","Zuletzt am",iv.lastDate,"date")}</div>
+    ${sel("src","Woher stammt der Wert?",iv.src||"vorlage",Object.entries(SRC))}
+    <p class="small muted" style="margin:-4px 0 10px">Werte aus Handbuch, Werkstatt oder eigener Erfahrung können (wenn aktiviert) anonym mit der Community geteilt werden.</p>
+    <button class="btn primary block">Speichern</button>
+    ${!isNew?`<button type="button" class="btn danger block" id="idel" style="margin-top:8px">Intervall löschen</button>`:""}
+  </form>`,root=>{
+    root.querySelector("#if").onsubmit=e=>{e.preventDefault();const d=formData(e.target);
+      const out={name:d.name,km:Number(d.km)||0,mo:Number(d.mo)||0,lastKm:d.lastKm===""?"":Number(d.lastKm),lastDate:d.lastDate,src:d.src};
+      if(!out.km&&!out.mo){toast("Bitte km- oder Zeitintervall angeben");return;}
+      if(!isNew&&(iv.src||"vorlage")===out.src&&out.src==="vorlage"&&(out.km!==Number(iv.km)||out.mo!==Number(iv.mo))) out.src="eigene";
+      v.intervals=v.intervals||[];
+      if(isNew) v.intervals.push({id:uid(),...out}); else Object.assign(iv,out);
+      saveVeh(v.id);close();render();};
+    const del=root.querySelector("#idel");
+    if(del) del.onclick=()=>confirmSheet("Intervall löschen?",()=>{v.intervals=v.intervals.filter(x=>x.id!==iv.id);saveVeh(v.id);render();});
+  });
+}
+function applyPresets(){
+  const v=V(); v.intervals=v.intervals||[];
+  const have=new Set(v.intervals.map(i=>i.name)); const list=PRESETS[v.typ].filter(p=>!have.has(p.name));
+  if(!list.length){ UI.tab="int"; render(); toast("Alle Vorlagen bereits vorhanden"); return; }
+  sheet("Intervalle anpassen",`<p class="small muted" style="margin-top:0">Richtwerte – passe sie an deine Gewohnheiten oder dein Handbuch an. 0 = aus. Haken entfernen, um ein Intervall wegzulassen.</p>
+    <form id="pf">${list.map((p,i)=>`<div style="border-top:1px solid var(--line);padding:10px 0">
+      <label class="toggle" style="padding:0 0 6px"><input type="checkbox" name="on${i}" checked><b>${esc(p.name)}</b></label>
+      <div class="grid2"><label class="f" style="margin:0"><span>alle … km</span><input class="i" type="number" min="0" name="km${i}" value="${p.km}"></label><label class="f" style="margin:0"><span>alle … Monate</span><input class="i" type="number" min="0" name="mo${i}" value="${p.mo}"></label></div></div>`).join("")}
+    <button class="btn primary block" style="margin-top:10px">Übernehmen</button></form>`,root=>{
+    root.querySelector("#pf").onsubmit=e=>{e.preventDefault();const d=formData(e.target);let n=0;
+      list.forEach((p,i)=>{ if(!d["on"+i]) return; const km=Number(d["km"+i])||0, mo=Number(d["mo"+i])||0; if(!km&&!mo) return;
+        v.intervals.push({id:uid(),name:p.name,km,mo,lastKm:curKm(v),lastDate:v.kaufdatum||today(),src:(km===p.km&&mo===p.mo)?"vorlage":"eigene"}); n++; });
+      saveVeh(v.id); close(); UI.tab="int"; render(); toast(`${n} Intervalle angelegt – bitte „zuletzt“ prüfen`);};
+  });
+}
+function applyPresetsRaw(){
+  const v=V(); v.intervals=v.intervals||[];
+  const have=new Set(v.intervals.map(i=>i.name)); let n=0;
+  PRESETS[v.typ].forEach(p=>{ if(!have.has(p.name)){ v.intervals.push({id:uid(),...p,lastKm:curKm(v),lastDate:v.kaufdatum||today(),src:"vorlage"}); n++; } });
+  saveVeh(v.id); UI.tab="int"; render(); toast(n?`${n} Intervalle angelegt – bitte „zuletzt“ prüfen`:"Alle Vorlagen bereits vorhanden");
+}
+
+function premiumSheet(reason){
+  sheet("⭐ Serviceheft Premium",`
+    ${reason?`<div class="warnbox">${esc(reason)}</div>`:""}
+    <div class="list">
+      <div class="item" style="cursor:default"><div class="ico">🚘</div><div class="grow"><b>Unbegrenzt Fahrzeuge</b><div class="small muted">Auto, Motorrad, Anhänger, Oldtimer …</div></div></div>
+      <div class="item" style="cursor:default"><div class="ico">🚫</div><div class="grow"><b>Keine Werbung</b></div></div>
+      <div class="item" style="cursor:default"><div class="ico">📘</div><div class="grow"><b>Serviceheft-Bericht</b><div class="small muted">Lückenloser Nachweis beim Verkauf – höherer Wiederverkaufswert</div></div></div>
+      <div class="item" style="cursor:default"><div class="ico">📊</div><div class="grow"><b>CSV-Export</b></div></div>
+    </div>
+    <div class="grid2" style="margin:12px 0"><div class="stat"><b>${CONFIG.pricing.monthly}</b><span>pro Monat</span></div><div class="stat"><b>${CONFIG.pricing.yearly}</b><span>pro Jahr</span></div></div>
+    <button class="btn primary block" id="ptog">${S.meta.premium?"Premium beenden (Demo)":"Premium aktivieren (Demo – ohne Zahlung)"}</button>
+    <p class="small muted">In dieser ersten Version ist noch kein Bezahlsystem angebunden. In der App-Store-Version läuft das über In-App-Käufe.</p>`,()=>{
+    $("#ptog").onclick=()=>{S.meta.premium=!S.meta.premium;saveMeta();close();render();toast(S.meta.premium?"Premium aktiv (Demo)":"Premium beendet");};
+  });
+}
+
+/* ================= Export ================= */
+function csvCell(x){ x=String(x??""); return /[;"\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x; }
+function buildCSV(){
+  const rows=[["Fahrzeug","FIN","Datum","km","Kategorie","Titel","Kosten","Durchgeführt","Werkstatt","Liter","Teile","Notiz"]];
+  vList().forEach(v=>(v.entries||[]).forEach(e=>rows.push([vName(v),v.vin,e.date,e.km,CATS[e.cat]?.n,e.title,String(e.cost).replace(".",","),{self:"Selbst",rent:"Selbst (Mietwerkstatt)",shop:"Werkstatt",dealer:"Vertragshändler"}[e.by],e.workshop,e.liter||"",e.parts,e.note])));
+  return "﻿"+rows.map(r=>r.map(csvCell).join(";")).join("\n");
+}
+function buildReport(v){
+  const es=[...(v.entries||[])].filter(e=>e.cat!=="fuel").sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  const c=costs(v);
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Serviceheft ${esc(vName(v))}</title><style>body{font-family:Arial,sans-serif;max-width:800px;margin:30px auto;color:#111;font-size:13px}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border-bottom:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f2f2f2}.g{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:12px}.m{color:#666;font-size:11px}</style></head><body>
+  <h1>Serviceheft</h1><div class="m">Erstellt am ${new Date().toLocaleDateString("de-DE")} mit Serviceheft-App · Angaben des Halters, nicht amtlich geprüft</div>
+  <div class="g"><div><b>Fahrzeug:</b> ${esc(vName(v))} ${esc(v.variante||"")}</div><div><b>FIN:</b> ${esc(v.vin||"–")}</div><div><b>Erstzulassung:</b> ${fdate(v.ez)}</div><div><b>Baujahr:</b> ${esc(v.baujahr||"–")}</div><div><b>Kennzeichen:</b> ${esc(v.kennzeichen||"–")}</div><div><b>km-Stand:</b> ${num(curKm(v))} km</div><div><b>HSN/TSN:</b> ${esc(v.hsn||"–")}/${esc(v.tsn||"–")}</div><div><b>Wartungskosten gesamt:</b> ${eur(c.total-(c.by.fuel||0))}</div></div>
+  <table><tr><th>Datum</th><th>km</th><th>Arbeit</th><th>Teile</th><th>Durch</th><th>Kosten</th></tr>
+  ${es.map(e=>`<tr><td>${fdate(e.date)}</td><td>${num(e.km)}</td><td><b>${esc(e.title||CATS[e.cat]?.n)}</b><br><span class="m">${esc(CATS[e.cat]?.n)}</span></td><td>${esc(e.parts||"").replace(/\n/g,"<br>")}</td><td>${e.by==="self"?"Selbst":e.by==="rent"?"Selbst, Mietwerkstatt"+(e.workshop?" "+esc(e.workshop):""):esc(e.workshop||"Werkstatt")}</td><td>${eur(e.cost)}</td></tr>`).join("")}
+  </table></body></html>`;
+}
+async function deliver(filename,data,mime){
+  try{
+    const type=filename.endsWith(".json")?"application/json":filename.endsWith(".csv")?"text/csv":"text/html";
+    const file=new File([data],filename,{type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:filename}); return true; }
+    const a=document.createElement("a"); a.href=URL.createObjectURL(file); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000); return true;
+  }catch(e){ if(e&&e.name==="AbortError") return false; }
+  if(downloads){ try{ await downloads.save({filename,data}); return; }catch(e){ if(e&&/declin|cancel|abort/i.test(e.code||e.message||"")) return; } }
+  sheet("Export",`<p class="small muted">Download ist hier nicht verfügbar. Kopiere den Inhalt und speichere ihn als <b>${esc(filename)}</b>.</p><pre class="code">${esc(data.slice(0,20000))}${data.length>20000?"\n…":""}</pre><button class="btn primary block" id="cp">In Zwischenablage kopieren</button>`,()=>{
+    $("#cp").onclick=async()=>{try{await navigator.clipboard.writeText(data);toast("Kopiert");}catch(e){toast("Kopieren nicht möglich");}};
+  });
+}
+function doExport(kind){
+  if(kind==="json") return backupNow();
+  if(kind==="import") return importSheet();
+  if(!S.meta.premium) return premiumSheet("Dieser Export ist Teil von Premium. Deine vollständige Datenkopie (JSON) bleibt immer kostenlos.");
+  if(kind==="csv") return deliver(`serviceheft-${today()}.csv`,buildCSV());
+  if(kind==="report"){ const v=V(); if(!v) return toast("Kein Fahrzeug"); return deliver(`serviceheft-${(v.kennzeichen||vName(v)).replace(/\W+/g,"-")}.html`,buildReport(v)); }
+}
+async function backupNow(){
+  const ok=await deliver(`serviceheft-backup-${today()}.json`,JSON.stringify({app:"serviceheft",version:1,exported:new Date().toISOString(),data:S},null,2));
+  if(ok!==false){ S.meta.lastBackup=today(); saveMeta(); render(); toast("Backup erstellt – im Teilen-Menü „In Dateien sichern“ → iCloud Drive wählen"); }
+}
+function importSheet(){
+  sheet("Daten importieren",`<p class="small muted">Wähle eine JSON-Backup-Datei. Vorhandene Fahrzeuge mit gleicher ID werden überschrieben.</p><input type="file" accept=".json,application/json" id="imf" class="i">`,()=>{
+    $("#imf").onchange=async e=>{
+      try{ const j=JSON.parse(await e.target.files[0].text()); const d=j.data||j; if(!d.vehicles) throw 0;
+        Object.values(d.vehicles).forEach(v=>{ if(v&&v.id){ S.vehicles[v.id]=v; saveVeh(v.id); } });
+        if(!S.meta.activeId) S.meta.activeId=Object.keys(S.vehicles)[0]; saveMeta(); close(); render(); toast("Import erfolgreich");
+      }catch(err){ toast("Datei konnte nicht gelesen werden"); }
+    };
+  });
+}
+function wipeAll(){
+  Object.keys(S.vehicles).forEach(id=>{ delete S.vehicles[id]; saveVeh(id); });
+  S.meta={premium:S.meta.premium,lastBackup:S.meta.lastBackup,consentShare:false,consentCommunity:false,consentDate:null,activeId:null,cart:[]}; saveMeta(); markDirty("community"); UI.tab="home"; render(); toast("Alle Daten gelöscht");
+}
+
+/* ================= Rechtstexte (ENTWURF) ================= */
+function legalSheet(which){
+  const draft=`<div class="warnbox">⚖️ Entwurf/Platzhalter – vor Veröffentlichung von einer Anwältin / einem Anwalt prüfen lassen.</div>`;
+  const privacy=`${draft}<div class="legal">
+  <h4>1. Welche Daten wir speichern</h4>Fahrzeugdaten (z. B. Marke, Modell, FIN, Kennzeichen, Kaufdatum, km-Stände), Wartungs- und Kosteneinträge sowie App-Einstellungen.
+  <h4>2. Zweck</h4>Bereitstellung des digitalen Servicehefts, Erinnerungen an Wartungsintervalle, Kostenauswertung.
+  <h4>3. Freiwillige Datenfreigabe (Opt-in)</h4>Nur wenn du unter „Datenfreigabe“ ausdrücklich zustimmst, geben wir pseudonymisierte Fahrzeughistorien (FIN, km-Stände, Wartungsdaten – ohne Name, E-Mail, Kennzeichen) an Partner wie Fahrzeughistorien-Dienste weiter, ggf. gegen Entgelt. Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Die Nutzung der App hängt nicht von dieser Einwilligung ab. Widerruf jederzeit in den Einstellungen.
+  <h4>3a. Community-Intervalle (Opt-in)</h4>Wenn du es aktivierst, werden Marke, Modell, Baujahr, Antrieb und von dir als Handbuch-/Werkstatt-/Erfahrungswert markierte Wartungsintervalle anderen Nutzern mit gleichem Modell als Median-Vorschlag angezeigt. Keine FIN, kein Kennzeichen, keine Kosten. Widerruf löscht deine geteilten Angaben.
+  <h4>4. Werbung & Affiliate-Links</h4>Versicherungsdaten dienen nur deiner eigenen Übersicht; wir vermitteln keine Versicherungen. Links zu Teilehändlern sind gekennzeichnete Affiliate-Links. Personalisierte Werbung nur mit gesonderter Einwilligung.
+  <h4>5. Deine Rechte</h4>Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit (kostenloser JSON-Export), Widerspruch, Beschwerde bei einer Aufsichtsbehörde.
+  <h4>6. Löschung</h4>„Alle Daten löschen“ entfernt deine Daten sofort aus der App.</div>`;
+  const agb=`${draft}<div class="legal">
+  <h4>§1 Leistung</h4>Die App ist ein digitales Serviceheft zur privaten Dokumentation. Einträge sind Angaben des Nutzers und ersetzen kein herstellergeführtes Serviceheft.
+  <h4>§2 Kostenlose Nutzung & Premium</h4>Ein Fahrzeug ist kostenlos. Weitere Fahrzeuge, Werbefreiheit und erweiterte Exporte (CSV, Serviceheft-Bericht) sind kostenpflichtig (Premium). Der Export der eigenen Rohdaten (JSON) ist stets kostenlos.
+  <h4>§3 Wartungsintervalle</h4>Vorgeschlagene Intervalle sind unverbindliche Richtwerte. Maßgeblich sind die Herstellervorgaben.
+  <h4>§4 Partnerangebote</h4>Kaufverträge über Teile kommen ausschließlich mit dem jeweiligen Händler zustande.
+  <h4>§5 Daten</h4>Die Weitergabe von Daten an Dritte erfolgt ausschließlich auf Grundlage der gesonderten Einwilligung gemäß Datenschutzerklärung.</div>`;
+  sheet(which==="agb"?"AGB":"Datenschutz",which==="agb"?agb:privacy);
+}
+
+/* ================= Start ================= */
+const saved=lsGet(); if(saved&&saved.vehicles){ S={...S,...saved,meta:{...S.meta,...saved.meta}}; }
+render();
+initCloud();
+try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
+if("serviceWorker" in navigator&&location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
