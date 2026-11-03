@@ -86,6 +86,11 @@ label.f>span{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
 input.i,select.i,textarea.i{display:block;width:100%;max-width:100%;min-width:0;min-height:44px;-webkit-appearance:none;appearance:none;font-size:16px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;outline:none}
 input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--accent)}
 textarea.i{min-height:70px;resize:vertical}
+.attl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.att{width:76px;height:76px;border-radius:10px;background:var(--panel2) center/cover no-repeat;position:relative;display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center;overflow:hidden;cursor:pointer;border:1px solid var(--line);padding:4px;word-break:break-all}
+.att .x{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);border:0;color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;line-height:24px;padding:0;cursor:pointer}
+.pill.prev{background:rgba(120,140,255,.15);color:#a9b5ff}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin-bottom:12px}.kv b{color:var(--muted);font-weight:500}
 input.i[type=date],input.i[type=month]{text-align:left}
 input.i::-webkit-date-and-time-value{text-align:left}
 select.i{background-image:linear-gradient(45deg,transparent 50%,#9aa1ad 50%),linear-gradient(135deg,#9aa1ad 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
@@ -151,7 +156,7 @@ const CONFIG = {
 };
 
 const CATS = {
-  service:{n:"Inspektion/Service",e:"🛠️"}, repair:{n:"Reparatur",e:"🔩"}, parts:{n:"Teile/Umbau",e:"⚙️"},
+  service:{n:"Inspektion/Service",e:"🛠️"}, repair:{n:"Reparatur",e:"🔩"}, damage:{n:"Unfall/Schaden",e:"💥"}, parts:{n:"Teile/Umbau",e:"⚙️"},
   fuel:{n:"Tanken/Laden",e:"⛽"}, tires:{n:"Reifen",e:"🛞"}, hu:{n:"HU/AU (TÜV)",e:"📋"},
   fees:{n:"Versicherung/Steuer",e:"💶"}, care:{n:"Pflege",e:"🧽"}, other:{n:"Sonstiges",e:"📎"}
 };
@@ -237,6 +242,44 @@ async function initCloud(){
     render();
     loadCommunity();
   }catch(e){ /* bleibt lokal */ }
+}
+
+/* ================= Belege & Fotos (IndexedDB, nur auf dem Gerät) ================= */
+const FILES={_db:null,ok:true,
+  open(){ if(this._db) return this._db; this._db=new Promise((res,rej)=>{ try{ const r=indexedDB.open("serviceheft_files",1); r.onupgradeneeded=()=>r.result.createObjectStore("files",{keyPath:"id"}); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }catch(e){ rej(e); } }); this._db.catch(()=>{this.ok=false;}); return this._db; },
+  async tx(mode,fn){ const d=await this.open(); return new Promise((res,rej)=>{ const t=d.transaction("files",mode); const st=t.objectStore("files"); let out; const r=fn(st); if(r) r.onsuccess=()=>{out=r.result;}; t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); },
+  put(o){ return this.tx("readwrite",st=>st.put(o)); },
+  get(id){ return this.tx("readonly",st=>st.get(id)); },
+  del(id){ return this.tx("readwrite",st=>st.delete(id)); },
+  clear(){ return this.tx("readwrite",st=>st.clear()); }
+};
+const MAX_PDF=8*1024*1024;
+function readAsDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsDataURL(f); }); }
+async function fileToAttachment(f){
+  const id="f_"+uid();
+  if(f.type==="application/pdf"||/\.pdf$/i.test(f.name)){ if(f.size>MAX_PDF) throw new Error("PDF zu groß (max. 8 MB)"); return {id,name:f.name,type:"application/pdf",data:await readAsDataURL(f)}; }
+  if(!f.type.startsWith("image/")) throw new Error("Nur Fotos und PDFs möglich");
+  const url=await readAsDataURL(f);
+  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error("Bild nicht lesbar")); i.src=url; });
+  const max=1600, sc=Math.min(1,max/Math.max(img.width,img.height));
+  const cv=document.createElement("canvas"); cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+  cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+  return {id,name:(f.name||"Foto").replace(/\.[^.]+$/,"")+".jpg",type:"image/jpeg",data:cv.toDataURL("image/jpeg",0.82)};
+}
+async function dataURLtoBlobURL(d){ const b=await (await fetch(d)).blob(); return URL.createObjectURL(b); }
+async function allFilesFor(vehicles){
+  const out=[]; for(const v of vehicles){ const ids=[...(v.docs||[]).map(a=>a.id),...(v.entries||[]).flatMap(e=>(e.att||[]).map(a=>a.id))]; for(const id of ids){ try{ const f=await FILES.get(id); if(f) out.push(f); }catch(err){} } }
+  return out;
+}
+async function viewAttachment(meta){
+  let f=null; try{ f=await FILES.get(meta.id); }catch(e){}
+  if(!f){ toast("Datei nicht auf diesem Gerät gefunden"); return; }
+  const url=await dataURLtoBlobURL(f.data);
+  const prev=$("#overlay").innerHTML;
+  const wrap=document.createElement("div"); wrap.className="sheet-bg"; wrap.style.zIndex=25;
+  wrap.innerHTML=`<div class="sheet"><h3>${esc(f.name)}<button class="x">×</button></h3>${f.type.startsWith("image/")?`<img src="${url}" style="width:100%;border-radius:10px">`:`<p>PDF-Dokument</p><a class="btn primary block" href="${url}" target="_blank" rel="noopener">PDF öffnen</a>`}</div>`;
+  const shut=()=>{wrap.remove();URL.revokeObjectURL(url);}; wrap.onclick=e=>{if(e.target===wrap)shut();}; wrap.querySelector(".x").onclick=shut;
+  document.body.appendChild(wrap);
 }
 
 /* ================= Community-Intervalle ================= */
@@ -427,7 +470,8 @@ function adminCard(v){
     const kdd=kd?days(kd):null;
     rows.push(`<div class="item" style="cursor:default"><div class="ico">🛡️</div><div class="grow"><b>${esc(v.versicherung||"Versicherung")}${v.vTarif?" · "+esc(v.vTarif):""}</b><div class="small muted">${v.vBeitrag?eur(v.vBeitrag)+"/Jahr":""}${v.vSf?" · "+esc(v.vSf):""}${hf?" · fällig "+fd(hf):""}</div>${kd&&kdd>=0?`<div class="small" style="color:${kdd<30?"var(--warn)":"var(--muted)"}">Kündigungsstichtag: ${fd(kd)} (noch ${kdd} Tage)</div>`:""}</div></div>`);
   }
-  if(!rows.length) return `<div class="card small muted">🛡️ Versicherung & HU-Termin noch nicht hinterlegt – <a href="#" data-act="editv" style="color:var(--accent2)">jetzt ergänzen</a></div>`;
+  rows.push(`<div class="item" data-act="docs"><div class="ico">📁</div><div class="grow"><b>Fahrzeugdokumente</b><div class="small muted">${(v.docs||[]).length?(v.docs.length+" Dokument"+(v.docs.length>1?"e":"")+" hinterlegt"):"Fahrzeugschein, Kaufvertrag, TÜV-Bericht … hinterlegen"}</div></div><span class="small muted">›</span></div>`);
+  if(rows.length===1) rows.unshift(`<div class="item" data-act="editv"><div class="ico">🛡️</div><div class="grow"><b>Versicherung & HU</b><div class="small muted">noch nicht hinterlegt – jetzt ergänzen</div></div><span class="small muted">›</span></div>`);
   const year=new Date().getFullYear(); const booked=(v.entries||[]).some(e=>e.cat==="fees"&&e.date>=year+"-01-01"&&/versicherung/i.test(e.title||""));
   return `<div class="card"><h2>🗂️ Verwaltung</h2><div class="list">${rows.join("")}</div>${v.vBeitrag&&!booked?`<button class="btn sm block" style="margin-top:8px" data-act="bookIns">Beitrag ${year} als Kosten erfassen</button>`:""}</div>`;
 }
@@ -442,7 +486,7 @@ function ivRow(iv,s,edit){
   <div class="small muted">${s.txt}${iv.src&&iv.src!=="vorlage"?` · ${SRC[iv.src]||""}`:""}</div><div class="bar"><i style="width:${Math.max(4,s.fr*100)}%;background:${stColor[s.st]}"></i></div></div></div></div>`;
 }
 function entryRow(e){
-  return `<div class="item" data-entry="${e.id}"><div class="ico">${CATS[e.cat]?.e||"📎"}</div><div class="grow"><div class="ellip"><b>${esc(e.title||CATS[e.cat]?.n)}</b></div><div class="small muted ellip">${fdate(e.date)} · ${num(e.km)} km${e.by==="self"?" · selbst":e.by==="rent"?" · Mietwerkstatt"+(e.workshop?" "+esc(e.workshop):""):e.workshop?" · "+esc(e.workshop):""}</div></div><div class="amt">${eur(e.cost)}</div></div>`;
+  return `<div class="item" data-entry="${e.id}"><div class="ico">${CATS[e.cat]?.e||"📎"}</div><div class="grow"><div class="ellip"><b>${esc(e.title||CATS[e.cat]?.n)}</b>${e.prev?' <span class="pill prev">Vorbesitzer</span>':""}${(e.att||[]).length?` <span class="small muted">📎${e.att.length}</span>`:""}${e.cat==="damage"&&e.dmg&&e.dmg.repariert!=="ja"?' <span class="pill warn">'+(e.dmg.repariert==="teilweise"?"teilrepariert":"nicht repariert")+'</span>':""}</div><div class="small muted ellip">${fdate(e.date)} · ${num(e.km)} km${e.by==="self"?" · selbst":e.by==="rent"?" · Mietwerkstatt"+(e.workshop?" "+esc(e.workshop):""):e.workshop?" · "+esc(e.workshop):""}</div></div><div class="amt">${eur(e.cost)}</div></div>`;
 }
 
 function viewLog(m){
@@ -513,7 +557,8 @@ function viewMore(m){
       <div class="item" data-exp="json"><div class="ico">☁️</div><div class="grow"><b>Backup in iCloud Drive</b><div class="small muted">Alle Daten als Datei sichern – „In Dateien sichern“ → iCloud Drive</div></div></div>
       <div class="item" data-exp="csv"><div class="ico">📊</div><div class="grow"><b>Einträge als CSV ${S.meta.premium?"":'<span class="badge-pro">PRO</span>'}</b><div class="small muted">Für Excel / Numbers</div></div></div>
       <div class="item" data-exp="report"><div class="ico">📘</div><div class="grow"><b>Serviceheft-Bericht ${S.meta.premium?"":'<span class="badge-pro">PRO</span>'}</b><div class="small muted">Druckfertig – ideal beim Fahrzeugverkauf</div></div></div>
-      <div class="item" data-exp="import"><div class="ico">📥</div><div class="grow"><b>Daten importieren</b><div class="small muted">Backup aus iCloud Drive wiederherstellen</div></div></div>
+      <div class="item" data-exp="transfer"><div class="ico">🔑</div><div class="grow"><b>Fahrzeug übergeben</b><div class="small muted">Komplette Akte mit Belegen für den neuen Besitzer – kostenlos</div></div></div>
+      <div class="item" data-exp="import"><div class="ico">📥</div><div class="grow"><b>Daten importieren</b><div class="small muted">Backup aus iCloud Drive oder Fahrzeugakte vom Vorbesitzer</div></div></div>
     </div></div>
   <div class="card"><h2>👥 Community-Intervalle</h2>
     <label class="toggle"><input type="checkbox" id="ccomm" ${S.meta.consentCommunity?"checked":""}><div><b>Meine Intervallwerte anonym teilen</b><div class="small muted">Geteilt werden nur Marke, Modell, Baujahr, Antrieb und Intervalle, die du als „Handbuch“, „Werkstatt“ oder „Eigene Erfahrung“ markiert hast. Keine FIN, kein Kennzeichen, keine Kosten. Jederzeit widerrufbar – deine Angaben werden dann entfernt.</div></div></label>
@@ -546,7 +591,7 @@ function bindCommon(m){
 const ACT={
   km:()=>kmSheet(), entry:()=>entryForm(null), fuel:()=>entryForm(null,"fuel"), editv:()=>vehicleForm(V()),
   gotoInt:()=>{UI.tab="int";render();}, gotoMore:()=>{UI.tab="more";render();}, gotoLog:()=>{UI.tab="log";render();}, newiv:()=>ivForm(null),
-  presets:()=>applyPresets(), backup:()=>backupNow(),
+  presets:()=>applyPresets(), backup:()=>backupNow(), docs:()=>docsSheet(V()),
   bookIns:()=>{const v=V();entryForm({cat:"fees",title:"Kfz-Versicherung "+new Date().getFullYear()+(v.versicherung?" ("+v.versicherung+")":""),date:today(),km:curKm(v),cost:v.vBeitrag,by:"self"});}, premium:()=>premiumSheet(), newv:()=>newVehicle(),
   privacy:()=>legalSheet("privacy"), agb:()=>legalSheet("agb"), wipe:()=>confirmSheet("Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.",wipeAll),
   cartToEntry:()=>{const v=V();const items=S.meta.cart.filter(c=>c.vid===v.id);entryForm(null,"parts",items.map(c=>c.qty+"× "+c.name).join("\n"));}
@@ -613,7 +658,7 @@ function vehicleForm(v,typ){
     <p class="small muted" style="margin:-4px 0 10px">Meist der 01.01. – die App erinnert dich an die Kündigungsfrist (1 Monat vorher).</p>
   </fieldset>
   <button class="btn primary block" type="submit">${isNew?"Fahrzeug speichern":"Änderungen speichern"}</button>
-  ${!isNew?`<button class="btn danger block" type="button" id="vdel" style="margin-top:8px">Fahrzeug löschen</button>`:""}
+  ${!isNew?`<button class="btn block" type="button" id="vdocs" style="margin-top:8px">📁 Fahrzeugdokumente (${(v.docs||[]).length})</button><button class="btn block" type="button" id="vtrans" style="margin-top:8px">🔑 Fahrzeug übergeben (Verkauf)</button><button class="btn danger block" type="button" id="vdel" style="margin-top:8px">Fahrzeug löschen</button>`:""}
   </form>`,root=>{
     let t=v.typ;
     root.querySelectorAll("#tseg button").forEach(b=>b.onclick=()=>{t=b.dataset.v;root.querySelectorAll("#tseg button").forEach(x=>x.classList.toggle("on",x===b));});
@@ -640,8 +685,10 @@ function vehicleForm(v,typ){
         Object.assign(v,d,{typ:t}); saveVeh(v.id); close(); render(); toast("Gespeichert");
       }
     };
+    const vd=root.querySelector("#vdocs"); if(vd) vd.onclick=()=>{ close(); docsSheet(v); };
+    const vt=root.querySelector("#vtrans"); if(vt) vt.onclick=()=>{ S.meta.activeId=v.id; close(); transferSheet(); };
     const del=root.querySelector("#vdel");
-    if(del) del.onclick=()=>confirmSheet(`„${vName(v)}“ mit allen Einträgen löschen?`,()=>{delete S.vehicles[v.id]; S.meta.cart=S.meta.cart.filter(c=>c.vid!==v.id); saveVeh(v.id); S.meta.activeId=null; saveMeta(); render();});
+    if(del) del.onclick=()=>confirmSheet(`„${vName(v)}“ mit allen Einträgen löschen?`,()=>{(v.entries||[]).forEach(x=>(x.att||[]).forEach(a=>FILES.del(a.id).catch(()=>{}))); (v.docs||[]).forEach(a=>FILES.del(a.id).catch(()=>{})); delete S.vehicles[v.id]; S.meta.cart=S.meta.cart.filter(c=>c.vid!==v.id); saveVeh(v.id); S.meta.activeId=null; saveMeta(); render();});
   });
 }
 
@@ -655,24 +702,53 @@ function kmSheet(){
 function entryForm(e,cat,partsText){
   const v=V(), isNew=!e||!e.id; e=e||{cat:cat||"service",date:today(),km:curKm(v),by:"self",parts:partsText||""};
   const ivs=v.intervals||[];
+  if(e.prev) return entryView(e);
   if(isNew) e={...e,km:""};
+  const dm=e.dmg||{};
+  let att=[...(e.att||[])]; const pending=[]; const removed=[];
   sheet(isNew?"Neuer Eintrag":"Eintrag bearbeiten",`<form id="ef">
     ${sel("cat","Kategorie",e.cat,Object.entries(CATS).map(([k,c])=>[k,c.e+" "+c.n]))}
     ${field("title","Was wurde gemacht?",e.title,"text","placeholder='z. B. Ölwechsel inkl. Filter'")}
     <div class="grid2">${field("date","Datum *",e.date,"date","required")}${field("km","km-Stand *",e.km,"number",`required min="1" inputmode="numeric" placeholder="zuletzt ${num(curKm(v))}"`)}</div>
     <div id="kmerr" class="small" style="color:var(--bad);margin:-6px 0 10px;display:none"></div>
     <div class="grid2">${field("cost","Kosten gesamt (€)",e.cost,"number","step=0.01")}${sel("by","Durchgeführt",e.by,[["self","🔧 Selbst"],["rent","🔧 Selbst in Mietwerkstatt"],["shop","🏭 Werkstatt"],["dealer","🏢 Vertragshändler"]])}</div>
+    <div id="dmgbox" style="display:none"><fieldset><legend>Unfall / Schaden</legend>
+      <div class="grid2">${sel("dmgArt","Art",dm.art||"Unfall",["Unfall","Parkschaden","Wildschaden","Hagel/Unwetter","Steinschlag/Glas","Vandalismus","Diebstahl/Einbruch","Sonstiges"])}${sel("dmgSchuld","Verschulden",dm.schuld||"",[["","–"],["eigen","Eigenverschulden"],["fremd","Fremdverschulden"],["teil","Teilschuld"],["unbekannt","Unbekannt"]])}</div>
+      <div class="grid2">${sel("dmgReg","Reguliert über",dm.reg||"",[["","–"],"Selbst bezahlt","Eigene Haftpflicht","Teilkasko","Vollkasko","Gegnerische Versicherung","Sonstiges"])}${field("dmgVers","Versicherung",dm.vers)}</div>
+      <div class="grid2">${field("dmgNr","Schadennummer",dm.nr)}${field("dmgHoehe","Schadenhöhe (€)",dm.hoehe,"number","step=0.01")}</div>
+      ${field("dmgGutachter","Gutachter / Gutachten-Nr.",dm.gutachter)}
+      ${field("dmgTeile","Betroffene Bereiche",dm.teile,"text","placeholder='z. B. Stoßstange hinten, Heckklappe'")}
+      ${sel("dmgRep","Repariert?",dm.repariert||"ja",[["ja","Ja, vollständig"],["teilweise","Teilweise"],["nein","Nein"]])}
+    </fieldset></div>
     <div id="fuelbox" style="display:none" class="grid2">${field("liter","Liter / kWh",e.liter,"number","step=0.01")}${sel("full","Vollgetankt?",e.full===false?"0":"1",[["1","Ja"],["0","Nein"]])}</div>
     ${field("workshop","Werkstatt / Mietwerkstatt / Händler",e.workshop,"text","list='wslist'")}<datalist id="wslist">${[...new Set(vList().flatMap(x=>(x.entries||[]).map(y=>y.workshop).filter(Boolean)))].map(w=>`<option value="${esc(w)}">`).join("")}</datalist>
     <label class="f"><span>Teile & Teilenummern</span><textarea class="i" name="parts" placeholder="z. B. Mann W712/95, 4,5 l Castrol Edge 5W-30">${esc(e.parts||"")}</textarea></label>
     <label class="f"><span>Notiz</span><textarea class="i" name="note">${esc(e.note||"")}</textarea></label>
+    <fieldset><legend>Belege & Fotos</legend>
+      <div class="attl" id="attl"></div>
+      <label class="btn sm" style="margin-bottom:10px">📷 Foto / Rechnung hinzufügen<input type="file" id="attin" accept="image/*,application/pdf" multiple style="display:none"></label>
+      <div class="small muted" style="margin-bottom:10px">Rechnungen, Gutachten, Vorher/Nachher-Fotos. Bleiben auf diesem Gerät und kommen ins Backup.</div>
+    </fieldset>
     ${ivs.length?`<fieldset><legend>Intervalle zurücksetzen</legend>${ivs.map(iv=>`<label class="toggle" style="padding:5px 0"><input type="checkbox" name="iv_${iv.id}" ${(e.ivs||[]).includes(iv.id)?"checked":""}> ${esc(iv.name)}</label>`).join("")}</fieldset>`:""}
     <button class="btn primary block">Speichern</button>
     ${!isNew?`<button type="button" class="btn danger block" id="edel" style="margin-top:8px">Eintrag löschen</button>`:""}
   </form>`,root=>{
     const c=root.querySelector("[name=cat]"); const fb=$("#fuelbox");
-    const upd=()=>fb.style.display=c.value==="fuel"?"grid":"none"; c.onchange=upd; upd();
-    root.querySelector("#ef").onsubmit=ev=>{
+    const db=$("#dmgbox");
+    const upd=()=>{fb.style.display=c.value==="fuel"?"grid":"none"; db.style.display=c.value==="damage"?"block":"none";}; c.onchange=upd; upd();
+    const attl=$("#attl");
+    const drawAtt=async()=>{
+      attl.innerHTML=att.map(a=>`<div class="att" data-aid="${a.id}">${a.type==="application/pdf"?"📄<br>"+esc(a.name.slice(0,18)):""}<button type="button" class="x" data-arm="${a.id}">×</button></div>`).join("")||'<span class="small muted">Noch keine Belege.</span>';
+      for(const a of att){ if(!a.type.startsWith("image/")) continue; const el=attl.querySelector(`[data-aid="${a.id}"]`); const pf=pending.find(x=>x.id===a.id); let d=pf&&pf.data; if(!d){ try{ const f=await FILES.get(a.id); d=f&&f.data; }catch(err){} } if(d&&el) el.style.backgroundImage=`url("${d}")`; }
+      attl.querySelectorAll("[data-arm]").forEach(b=>b.onclick=ev=>{ev.stopPropagation(); const id=b.dataset.arm; att=att.filter(x=>x.id!==id); const i=pending.findIndex(x=>x.id===id); if(i>=0) pending.splice(i,1); else removed.push(id); drawAtt();});
+      attl.querySelectorAll("[data-aid]").forEach(el=>el.onclick=()=>{ const a=att.find(x=>x.id===el.dataset.aid); const pf=pending.find(x=>x.id===a.id); if(pf){ const w=document.createElement("div"); w.className="sheet-bg"; w.style.zIndex=25; w.innerHTML=pf.type.startsWith("image/")?`<div class="sheet"><img src="${pf.data}" style="width:100%;border-radius:10px"></div>`:`<div class="sheet"><p>${esc(pf.name)} wird beim Speichern abgelegt.</p></div>`; w.onclick=()=>w.remove(); document.body.appendChild(w);} else viewAttachment(a); });
+    };
+    drawAtt();
+    $("#attin").onchange=async ev=>{
+      for(const f of ev.target.files){ try{ const a=await fileToAttachment(f); pending.push(a); att.push({id:a.id,name:a.name,type:a.type}); }catch(err){ toast(err.message||"Datei nicht möglich"); } }
+      ev.target.value=""; drawAtt();
+    };
+    root.querySelector("#ef").onsubmit=async ev=>{
       ev.preventDefault(); const d=formData(ev.target);
       const kmv=Number(d.km), ke=$("#kmerr"), kin=ev.target.querySelector("[name=km]");
       const fail=msg=>{ke.textContent=msg;ke.style.display="block";kin.focus();kin.scrollIntoView({block:"center"});};
@@ -684,6 +760,10 @@ function entryForm(e,cat,partsText){
       if(after&&kmv>after.km) return fail(`Der km-Stand ist höher als beim späteren Eintrag vom ${fdate(after.date)} (${num(after.km)} km). Bitte Datum oder km prüfen.`);
       const out={id:e.id||uid(),cat:d.cat,title:d.title,date:d.date,km:Number(d.km)||0,cost:d.cost===""?0:Number(d.cost),by:d.by,workshop:d.workshop,parts:d.parts,note:d.note};
       if(d.cat==="fuel"){out.liter=Number(d.liter)||0;out.full=d.full==="1";}
+      if(d.cat==="damage"){out.dmg={art:d.dmgArt,schuld:d.dmgSchuld,reg:d.dmgReg,vers:d.dmgVers,nr:d.dmgNr,hoehe:d.dmgHoehe===""?"":Number(d.dmgHoehe),gutachter:d.dmgGutachter,teile:d.dmgTeile,repariert:d.dmgRep};}
+      try{ for(const a of pending) await FILES.put({...a,vid:v.id,eid:out.id}); for(const id of removed) await FILES.del(id); }
+      catch(err){ if(pending.length){ toast("Belege konnten auf diesem Gerät nicht gespeichert werden"); return; } }
+      out.att=att.map(a=>({id:a.id,name:a.name,type:a.type}));
       out.ivs=ivs.filter(iv=>d["iv_"+iv.id]).map(iv=>iv.id);
       out.ivs.forEach(id=>{const iv=ivs.find(x=>x.id===id); if(!iv.lastDate||out.date>=iv.lastDate){iv.lastDate=out.date;iv.lastKm=out.km;}});
       v.entries=v.entries||[]; const kmBefore=curKm(v);
@@ -693,7 +773,39 @@ function entryForm(e,cat,partsText){
       saveVeh(v.id); close(); render(); toast(kmAfter>kmBefore?`Gespeichert · km-Stand jetzt ${num(kmAfter)} km`:"Eintrag gespeichert");
     };
     const del=root.querySelector("#edel");
-    if(del) del.onclick=()=>confirmSheet("Diesen Eintrag löschen?",()=>{v.entries=v.entries.filter(x=>x.id!==e.id);saveVeh(v.id);render();});
+    if(del) del.onclick=()=>confirmSheet("Diesen Eintrag löschen?",()=>{(e.att||[]).forEach(a=>FILES.del(a.id).catch(()=>{}));v.entries=v.entries.filter(x=>x.id!==e.id);saveVeh(v.id);render();});
+  });
+}
+const DOCTYPES=["Fahrzeugschein (ZB I)","Fahrzeugbrief (ZB II)","Kaufvertrag","Versicherungsschein","COC / Datenblatt","TÜV-Bericht","Garantie/Gewährleistung","Sonstiges"];
+function docsSheet(v){
+  v.docs=v.docs||[];
+  const draw=async()=>{
+    const box=$("#docl"); if(!box) return;
+    box.innerHTML=v.docs.length?v.docs.map(a=>`<div class="item" data-doc="${a.id}"><div class="att" data-dthumb="${a.id}" style="width:52px;height:52px;flex:0 0 52px">${a.type==="application/pdf"?"📄":""}</div><div class="grow"><b class="ellip">${esc(a.label||a.name)}</b><div class="small muted ellip">${esc(a.name)} · ${fdate(a.date)}</div></div><button class="btn sm danger" data-drm="${a.id}">✕</button></div>`).join(""):'<p class="small muted">Noch keine Dokumente.</p>';
+    box.querySelectorAll("[data-doc]").forEach(el=>el.onclick=()=>viewAttachment(v.docs.find(x=>x.id===el.dataset.doc)));
+    box.querySelectorAll("[data-drm]").forEach(b=>b.onclick=ev=>{ev.stopPropagation(); const id=b.dataset.drm; v.docs=v.docs.filter(x=>x.id!==id); FILES.del(id).catch(()=>{}); saveVeh(v.id); draw(); render();});
+    for(const a of v.docs){ if(!a.type.startsWith("image/")) continue; try{ const f=await FILES.get(a.id); const el=box.querySelector(`[data-dthumb="${a.id}"]`); if(f&&el) el.style.backgroundImage=`url("${f.data}")`; }catch(e){} }
+  };
+  sheet("📁 Fahrzeugdokumente",`<p class="small muted" style="margin-top:0">Fahrzeugschein, Kaufvertrag, Versicherungsschein, TÜV-Bericht … als Foto oder PDF. Bleiben auf diesem Gerät und kommen ins Backup.</p>
+    <div class="list" id="docl"></div>
+    <div class="grid2" style="margin-top:12px">${sel("dtype","Art des Dokuments","Fahrzeugschein (ZB I)",DOCTYPES)}<label class="f"><span>&nbsp;</span><label class="btn primary block" style="min-height:44px">＋ Hinzufügen<input type="file" id="docin" accept="image/*,application/pdf" multiple style="display:none"></label></label></div>`,()=>{
+    draw();
+    $("#docin").onchange=async ev=>{
+      const label=document.querySelector("[name=dtype]").value;
+      for(const f of ev.target.files){ try{ const a=await fileToAttachment(f); await FILES.put({...a,vid:v.id,doc:true}); v.docs.push({id:a.id,name:a.name,type:a.type,label,date:today()}); }catch(err){ toast(err.message||"Datei nicht möglich"); } }
+      ev.target.value=""; saveVeh(v.id); draw(); render(); toast("Dokument gespeichert");
+    };
+  });
+}
+const BY={self:"Selbst",rent:"Selbst (Mietwerkstatt)",shop:"Werkstatt",dealer:"Vertragshändler"};
+const SCHULD={eigen:"Eigenverschulden",fremd:"Fremdverschulden",teil:"Teilschuld",unbekannt:"Unbekannt"};
+function entryView(e){
+  const dm=e.dmg||{}; const rows=[["Kategorie",(CATS[e.cat]?.e||"")+" "+(CATS[e.cat]?.n||"")],["Datum",fdate(e.date)],["km-Stand",num(e.km)+" km"],["Kosten",e.cost===null||e.cost===undefined||e.cost===""?"nicht angegeben":eur(e.cost)],["Durchgeführt",(BY[e.by]||"")+(e.workshop?" · "+e.workshop:"")],["Teile",e.parts],["Notiz",e.note]];
+  if(e.cat==="damage") rows.push(["Schadensart",dm.art],["Verschulden",SCHULD[dm.schuld]],["Reguliert über",dm.reg],["Versicherung",dm.vers],["Schadennummer",dm.nr],["Schadenhöhe",dm.hoehe!==""&&dm.hoehe!=null?eur(dm.hoehe):""],["Gutachter",dm.gutachter],["Betroffen",dm.teile],["Repariert",{ja:"Ja",teilweise:"Teilweise",nein:"Nein"}[dm.repariert]]);
+  sheet(esc(e.title||CATS[e.cat]?.n||"Eintrag"),`<div class="warnbox" style="background:rgba(120,140,255,.1);border-color:rgba(120,140,255,.35)">Vom Vorbesitzer übernommen – zum Schutz der Historie nicht änderbar.</div>
+    <div class="kv">${rows.filter(r=>r[1]).map(r=>`<b>${r[0]}</b><span>${esc(r[1]).replace(/\n/g,"<br>")}</span>`).join("")}</div>
+    ${(e.att||[]).length?`<div class="attl" id="vattl">${e.att.map(a=>`<div class="att" data-aid="${a.id}">${a.type==="application/pdf"?"📄<br>"+esc(a.name.slice(0,18)):""}</div>`).join("")}</div>`:""}`,async()=>{
+    for(const a of (e.att||[])){ const el=document.querySelector(`#vattl [data-aid="${a.id}"]`); if(!el) continue; el.onclick=()=>viewAttachment(a); if(a.type.startsWith("image/")){ try{ const f=await FILES.get(a.id); if(f) el.style.backgroundImage=`url("${f.data}")`; }catch(err){} } }
   });
 }
 
@@ -783,7 +895,37 @@ function buildCSV(){
   vList().forEach(v=>(v.entries||[]).forEach(e=>rows.push([vName(v),v.vin,e.date,e.km,CATS[e.cat]?.n,e.title,String(e.cost).replace(".",","),{self:"Selbst",rent:"Selbst (Mietwerkstatt)",shop:"Werkstatt",dealer:"Vertragshändler"}[e.by],e.workshop,e.liter||"",e.parts,e.note])));
   return "﻿"+rows.map(r=>r.map(csvCell).join(";")).join("\n");
 }
-function buildReport(v){
+async function buildReport(v,opt){
+  opt=Object.assign({costs:true,files:true,transfer:false},opt||{});
+  const all=[...(v.entries||[])].sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.km-b.km));
+  const files=opt.files?await allFilesFor([{entries:all.filter(e=>e.cat!=="fees")}]):[];
+  const fmap={}; files.forEach(f=>fmap[f.id]=f);
+  const money=x=>opt.costs?(x===null||x===undefined||x===""?"–":eur(x)):"–";
+  const byTxt=e=>e.by==="self"?"Selbst":e.by==="rent"?"Selbst, Mietwerkstatt"+(e.workshop?" "+esc(e.workshop):""):esc(e.workshop||(e.by==="dealer"?"Vertragshändler":"Werkstatt"));
+  const pv=e=>e.prev?' <span class="pv">Vorbesitzer</span>':"";
+  const attHTML=e=>(e.att||[]).map(a=>fmap[a.id]).filter(Boolean).map(f=>f.type.startsWith("image/")?`<a href="${f.data}" target="_blank"><img src="${f.data}" alt="${esc(f.name)}"></a>`:`<a class="pdf" href="${f.data}" download="${esc(f.name)}">📄 ${esc(f.name)}</a>`).join("");
+  const dmg=all.filter(e=>e.cat==="damage"), svc=all.filter(e=>!["fuel","damage","fees"].includes(e.cat)), fuel=all.filter(e=>e.cat==="fuel");
+  const sum=svc.reduce((s,e)=>s+(Number(e.cost)||0),0);
+  let transfer="";
+  if(opt.transfer){
+    const veh=JSON.parse(JSON.stringify(v));
+    ["versicherung","vTarif","vBeitrag","vSf","vNummer","vFaellig","kaufpreis","quelle","notiz","kmDate","docs"].forEach(k=>delete veh[k]);
+    veh.entries=(veh.entries||[]).filter(e=>e.cat!=="fees").map(e=>{ if(!opt.costs){e.cost=null; if(e.dmg) e.dmg.hoehe="";} if(!opt.files) e.att=[]; return e; });
+    const payload={app:"serviceheft",kind:"transfer",version:1,created:new Date().toISOString(),vehicle:veh,files:opt.files?files:[]};
+    transfer=`<script type="application/json" id="serviceheft-transfer">${JSON.stringify(payload).replace(/</g,"\\u003c")}<\/script>`;
+  }
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fahrzeugakte ${esc(vName(v))}</title><style>body{font-family:Arial,sans-serif;max-width:860px;margin:24px auto;padding:0 14px;color:#111;font-size:13px}h1{margin:0}h2{margin:26px 0 6px;font-size:17px;border-bottom:2px solid #ff8a1f;padding-bottom:4px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}th{background:#f4f4f4}.g{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:12px}.m{color:#666;font-size:11px}.pv{background:#e8ebff;color:#3b4bb3;border-radius:4px;padding:0 4px;font-size:10px}.imgs img{height:90px;border-radius:6px;margin:4px 4px 0 0;border:1px solid #ccc}.pdf{display:inline-block;margin:4px 6px 0 0;font-size:12px}.box{background:#fff7ee;border:1px solid #ffd2a6;border-radius:8px;padding:10px;margin-top:12px}@media print{.imgs img{height:70px}}</style></head><body>
+  <h1>Fahrzeugakte / Serviceheft</h1><div class="m">Erstellt am ${new Date().toLocaleDateString("de-DE")} mit der Serviceheft-App · Angaben der Halter, nicht amtlich geprüft</div>
+  <div class="g"><div><b>Fahrzeug:</b> ${esc(vName(v))} ${esc(v.variante||"")}</div><div><b>FIN:</b> ${esc(v.vin||"–")}</div><div><b>Erstzulassung:</b> ${fdate(v.ez)}</div><div><b>Baujahr:</b> ${esc(v.baujahr||"–")}</div><div><b>Kennzeichen:</b> ${esc(v.kennzeichen||"–")}</div><div><b>km-Stand:</b> ${num(curKm(v))} km</div><div><b>HSN/TSN:</b> ${esc(v.hsn||"–")}/${esc(v.tsn||"–")}</div><div><b>Antrieb:</b> ${esc(v.kraftstoff||"–")}${v.kw?" · "+v.kw+" kW":""}</div>${opt.costs?`<div><b>Wartung & Reparaturen gesamt:</b> ${eur(sum)}</div>`:""}<div><b>Einträge:</b> ${svc.length} Wartung/Reparatur · ${dmg.length} Schäden</div></div>
+  ${opt.transfer?`<div class="box"><b>Übergabe an den neuen Besitzer:</b> Diese Datei enthält die komplette Historie. Mit der Serviceheft-App kann sie unter „Mehr → Export → Daten importieren“ übernommen und weitergeführt werden.</div>`:""}
+  <h2>💥 Unfälle & Schäden</h2>
+  ${dmg.length?`<table><tr><th>Datum</th><th>km</th><th>Schaden</th><th>Regulierung</th><th>Repariert</th><th>Höhe</th></tr>${dmg.map(e=>{const d=e.dmg||{};return `<tr><td>${fdate(e.date)}</td><td>${num(e.km)}</td><td><b>${esc(e.title||d.art||"Schaden")}</b>${pv(e)}<br><span class="m">${esc(d.art||"")}${d.teile?" · "+esc(d.teile):""}${d.schuld?" · "+esc(SCHULD[d.schuld]||""):""}</span>${e.note?`<br><span class="m">${esc(e.note)}</span>`:""}<div class="imgs">${attHTML(e)}</div></td><td>${esc(d.reg||"–")}${d.vers?"<br>"+esc(d.vers):""}${d.nr?`<br><span class="m">Nr. ${esc(d.nr)}</span>`:""}${d.gutachter?`<br><span class="m">Gutachter: ${esc(d.gutachter)}</span>`:""}</td><td>${{ja:"Ja",teilweise:"Teilweise",nein:"Nein"}[d.repariert]||"–"}</td><td>${money(d.hoehe)}</td></tr>`;}).join("")}</table>`:`<p class="m">Keine Unfälle oder Schäden eingetragen.</p>`}
+  <h2>🛠️ Wartung & Reparaturen</h2>
+  ${svc.length?`<table><tr><th>Datum</th><th>km</th><th>Arbeit</th><th>Teile</th><th>Durch</th><th>Kosten</th></tr>${svc.map(e=>`<tr><td>${fdate(e.date)}</td><td>${num(e.km)}</td><td><b>${esc(e.title||CATS[e.cat]?.n)}</b>${pv(e)}<br><span class="m">${esc(CATS[e.cat]?.n)}</span>${e.note?`<br><span class="m">${esc(e.note)}</span>`:""}<div class="imgs">${attHTML(e)}</div></td><td>${esc(e.parts||"").replace(/\n/g,"<br>")}</td><td>${byTxt(e)}</td><td>${money(e.cost)}</td></tr>`).join("")}</table>`:`<p class="m">Keine Einträge.</p>`}
+  ${fuel.length?`<h2>⛽ km-Nachweis aus Tankstopps</h2><p class="m">${fuel.length} Tankstopps von ${fdate(fuel[0].date)} (${num(fuel[0].km)} km) bis ${fdate(fuel[fuel.length-1].date)} (${num(fuel[fuel.length-1].km)} km).</p>`:""}
+  ${transfer}</body></html>`;
+}
+function buildReportOld(v){
   const es=[...(v.entries||[])].filter(e=>e.cat!=="fuel").sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   const c=costs(v);
   return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Serviceheft ${esc(vName(v))}</title><style>body{font-family:Arial,sans-serif;max-width:800px;margin:30px auto;color:#111;font-size:13px}h1{margin:0}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border-bottom:1px solid #ccc;padding:6px;text-align:left;vertical-align:top}th{background:#f2f2f2}.g{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin-top:12px}.m{color:#666;font-size:11px}</style></head><body>
@@ -805,28 +947,63 @@ async function deliver(filename,data,mime){
     $("#cp").onclick=async()=>{try{await navigator.clipboard.writeText(data);toast("Kopiert");}catch(e){toast("Kopieren nicht möglich");}};
   });
 }
-function doExport(kind){
+async function backupData(){
+  let files=[]; try{ files=await allFilesFor(vList()); }catch(e){}
+  return JSON.stringify({app:"serviceheft",version:2,exported:new Date().toISOString(),data:S,files});
+}
+function fileSafe(v){ return (v.kennzeichen||vName(v)).replace(/[^\wäöüÄÖÜß-]+/g,"-"); }
+function transferSheet(){
+  const v=V(); if(!v) return toast("Kein Fahrzeug");
+  sheet("🔑 Fahrzeug übergeben",`<p class="small muted" style="margin-top:0">Erstellt die komplette Fahrzeugakte von <b style="color:var(--text)">${esc(vName(v))}</b> als eine Datei. Der neue Besitzer kann sie ansehen, ausdrucken – und mit der Serviceheft-App übernehmen und weiterführen.</p>
+    <label class="toggle"><input type="checkbox" id="tcost" checked><div><b>Kosten mitgeben</b><div class="small muted">Preise von Reparaturen und Schäden anzeigen</div></div></label>
+    <label class="toggle"><input type="checkbox" id="tfiles" checked><div><b>Belege & Fotos mitgeben</b><div class="small muted">Rechnungen, Gutachten, Fotos</div></div></label>
+    <p class="small muted">Nicht enthalten: deine Versicherungsdaten, Kaufpreis, private Notizen, Versicherungs-/Steuerbuchungen und deine Fahrzeugdokumente (z. B. Fahrzeugschein – die übergibst du im Original).</p>
+    <button class="btn primary block" id="tgo">Fahrzeugakte erstellen</button>`,()=>{
+    $("#tgo").onclick=async()=>{ $("#tgo").disabled=true; $("#tgo").textContent="Wird erstellt …";
+      const html=await buildReport(v,{costs:$("#tcost").checked,files:$("#tfiles").checked,transfer:true});
+      close(); await deliver(`Fahrzeugakte-${fileSafe(v)}.html`,html); };
+  });
+}
+async function doExport(kind){
+  if(kind==="transfer") return transferSheet();
   if(kind==="json") return backupNow();
   if(kind==="import") return importSheet();
   if(!S.meta.premium) return premiumSheet("Dieser Export ist Teil von Premium. Deine vollständige Datenkopie (JSON) bleibt immer kostenlos.");
   if(kind==="csv") return deliver(`serviceheft-${today()}.csv`,buildCSV());
-  if(kind==="report"){ const v=V(); if(!v) return toast("Kein Fahrzeug"); return deliver(`serviceheft-${(v.kennzeichen||vName(v)).replace(/\W+/g,"-")}.html`,buildReport(v)); }
+  if(kind==="report"){ const v=V(); if(!v) return toast("Kein Fahrzeug"); return deliver(`Serviceheft-${fileSafe(v)}.html`,await buildReport(v,{costs:true,files:true})); }
 }
 async function backupNow(){
-  const ok=await deliver(`serviceheft-backup-${today()}.json`,JSON.stringify({app:"serviceheft",version:1,exported:new Date().toISOString(),data:S},null,2));
+  const ok=await deliver(`serviceheft-backup-${today()}.json`,await backupData());
   if(ok!==false){ S.meta.lastBackup=today(); saveMeta(); render(); toast("Backup erstellt – im Teilen-Menü „In Dateien sichern“ → iCloud Drive wählen"); }
 }
 function importSheet(){
-  sheet("Daten importieren",`<p class="small muted">Wähle eine JSON-Backup-Datei. Vorhandene Fahrzeuge mit gleicher ID werden überschrieben.</p><input type="file" accept=".json,application/json" id="imf" class="i">`,()=>{
+  sheet("Daten importieren",`<p class="small muted">Wähle ein <b>Backup</b> (.json) oder eine <b>Fahrzeugakte</b> vom Vorbesitzer (.html).</p><input type="file" accept=".json,.html,.htm,application/json,text/html" id="imf" class="i">`,()=>{
     $("#imf").onchange=async e=>{
-      try{ const j=JSON.parse(await e.target.files[0].text()); const d=j.data||j; if(!d.vehicles) throw 0;
+      try{
+        const txt=await e.target.files[0].text(); let j;
+        if(/^\s*</.test(txt)){ const doc=new DOMParser().parseFromString(txt,"text/html"); const sc=doc.getElementById("serviceheft-transfer"); if(!sc) throw new Error("Diese Datei enthält keine übertragbare Fahrzeugakte."); j=JSON.parse(sc.textContent); }
+        else j=JSON.parse(txt);
+        if(j.kind==="transfer") return importTransfer(j);
+        const d=j.data||j; if(!d.vehicles) throw new Error("Keine Serviceheft-Daten gefunden.");
+        for(const f of (j.files||[])){ try{ await FILES.put(f); }catch(err){} }
         Object.values(d.vehicles).forEach(v=>{ if(v&&v.id){ S.vehicles[v.id]=v; saveVeh(v.id); } });
-        if(!S.meta.activeId) S.meta.activeId=Object.keys(S.vehicles)[0]; saveMeta(); close(); render(); toast("Import erfolgreich");
-      }catch(err){ toast("Datei konnte nicht gelesen werden"); }
+        if(!S.meta.activeId) S.meta.activeId=Object.keys(S.vehicles)[0]; saveMeta(); close(); render(); toast("Backup wiederhergestellt");
+      }catch(err){ toast(err&&err.message&&err.message.length<90?err.message:"Datei konnte nicht gelesen werden"); }
     };
   });
 }
+async function importTransfer(j){
+  if(!S.meta.premium&&vList().length>=CONFIG.freeVehicles){ close(); premiumSheet("Du hast schon ein Fahrzeug angelegt. Für ein weiteres Fahrzeug brauchst du Premium – oder du löschst das bisherige."); return; }
+  const src=j.vehicle||{}; const nid=uid(); const idmap={};
+  for(const f of (j.files||[])){ const nf="f_"+uid(); idmap[f.id]=nf; try{ await FILES.put({...f,id:nf,vid:nid}); }catch(err){} }
+  const v={...src,id:nid,created:Date.now(),kaufdatum:today(),kmKauf:curKm(src),kmAktuell:curKm(src),kmDate:today(),vorbesitzer:(Number(src.vorbesitzer)||0)+1};
+  v.entries=(src.entries||[]).map(e=>({...e,id:uid(),prev:true,ivs:[],att:(e.att||[]).filter(a=>idmap[a.id]).map(a=>({...a,id:idmap[a.id]}))}));
+  v.intervals=(src.intervals||[]).map(i=>({...i,id:uid()}));
+  S.vehicles[nid]=v; S.meta.activeId=nid; saveVeh(nid); saveMeta(); close(); UI.tab="home"; render();
+  sheet("🔑 Fahrzeug übernommen",`<p>Die Fahrzeugakte von <b>${esc(vName(v))}</b> mit ${v.entries.length} Einträgen ist jetzt in deiner App. Die Einträge des Vorbesitzers sind markiert und nicht änderbar.</p><p class="small muted">Bitte prüfe Kennzeichen, Kaufdatum und deine Versicherung unter „Fahrzeug bearbeiten“.</p><button class="btn primary block" id="tok">Fahrzeug prüfen</button>`,()=>{$("#tok").onclick=()=>{close();vehicleForm(V());};});
+}
 function wipeAll(){
+  FILES.clear().catch(()=>{});
   Object.keys(S.vehicles).forEach(id=>{ delete S.vehicles[id]; saveVeh(id); });
   S.meta={premium:S.meta.premium,lastBackup:S.meta.lastBackup,consentShare:false,consentCommunity:false,consentDate:null,activeId:null,cart:[]}; saveMeta(); markDirty("community"); UI.tab="home"; render(); toast("Alle Daten gelöscht");
 }
@@ -836,6 +1013,7 @@ function legalSheet(which){
   const draft=`<div class="warnbox">⚖️ Entwurf/Platzhalter – vor Veröffentlichung von einer Anwältin / einem Anwalt prüfen lassen.</div>`;
   const privacy=`${draft}<div class="legal">
   <h4>1. Welche Daten wir speichern</h4>Fahrzeugdaten (z. B. Marke, Modell, FIN, Kennzeichen, Kaufdatum, km-Stände), Wartungs- und Kosteneinträge sowie App-Einstellungen.
+  <h4>1a. Belege & Fotos</h4>Angehängte Rechnungen und Fotos bleiben auf deinem Gerät und werden nur in deine Backups bzw. – wenn du es auslöst – in die Fahrzeugakte für einen Käufer übernommen.
   <h4>2. Zweck</h4>Bereitstellung des digitalen Servicehefts, Erinnerungen an Wartungsintervalle, Kostenauswertung.
   <h4>3. Freiwillige Datenfreigabe (Opt-in)</h4>Nur wenn du unter „Datenfreigabe“ ausdrücklich zustimmst, geben wir pseudonymisierte Fahrzeughistorien (FIN, km-Stände, Wartungsdaten – ohne Name, E-Mail, Kennzeichen) an Partner wie Fahrzeughistorien-Dienste weiter, ggf. gegen Entgelt. Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Die Nutzung der App hängt nicht von dieser Einwilligung ab. Widerruf jederzeit in den Einstellungen.
   <h4>3a. Community-Intervalle (Opt-in)</h4>Wenn du es aktivierst, werden Marke, Modell, Baujahr, Antrieb und von dir als Handbuch-/Werkstatt-/Erfahrungswert markierte Wartungsintervalle anderen Nutzern mit gleichem Modell als Median-Vorschlag angezeigt. Keine FIN, kein Kennzeichen, keine Kosten. Widerruf löscht deine geteilten Angaben.
